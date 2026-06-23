@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie Interactive — Campus IA Fouju</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --color-opposed: #ef4444;
+            --color-opposed-light: #fee2e2;
+            --color-favorable: #22c55e;
+            --color-favorable-light: #dcfce7;
+            --color-neutral: #f59e0b;
+            --color-neutral-light: #fef3c7;
+            
+            --primary: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Menu Onglets */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interface Cartographie */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Filtres */
+        .filters-sidebar {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn .count {
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .filter-btn.active .count {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grille des Cartes Acteurs */
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actor-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .actor-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .actor-body {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .actor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.025em;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modal Détails Acteur */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            position: relative;
+            animation: modalAnim 0.2s ease-out;
+        }
+
+        @keyframes modalAnim {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-field {
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-field p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-verbatim {
+            background-color: var(--bg-primary);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        /* Styles Onglet Griefs */
+        .griefs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .griefs-container { grid-template-columns: 1fr; }
+        }
+
+        .grief-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .grief-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Listes & Sources */
+        .list-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .list-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .list-card ul {
+            padding-left: 1.5rem;
+        }
+
+        .list-card li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">Cartographie Interactive — Campus IA Fouju</h1>
+        <p id="header-subtitle">Analyse consolidée et structurée des collèges d'acteurs, forces en présence, griefs techniques et points de vigilance.</p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('carto')">Cartographie des Acteurs</button>
+        <button class="tab-btn" onclick="switchTab('griefs')">Synthèse des Griefs</button>
+        <button class="tab-btn" onclick="switchTab('vigilance')">Points de Vigilance &amp; Sources</button>
+    </nav>
+
+    <div id="tab-carto" class="tab-content active">
+        <div class="dashboard-layout">
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+                    <div class="filter-options" id="cat-filters-container">
+                        </div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Positionnement</h3>
+                    <div class="filter-options" id="stance-filters-container">
+                        </div>
+                </div>
+            </aside>
+
+            <main class="actors-grid" id="actors-grid">
+                </main>
+        </div>
+    </div>
+
+    <div id="tab-griefs" class="tab-content">
+        <div class="griefs-container" id="griefs-grid">
+            <div class="grief-card">
+                <h2>⚡ Démesure énergétique &amp; Foncière</h2>
+                <p>Emprise colossale de <strong>90 hectares</strong> de terres agricoles franciliennes artificialisées. Le site projeté consommerait à terme <strong>1,4 GW (10,5 TWh)</strong>, mobilisant l'équivalent de la production de plus d'un réacteur nucléaire de dernière génération et représentant un saut d'échelle critique pour la région.</p>
+            </div>
+            <div class="grief-card">
+                <h2>🌐 Monopolisation et saturation des réseaux</h2>
+                <p>La concentration massive des demandes d'alimentation par les centres de calcul IA représente une pression sans précédent pour RTE. Cette hégémonie structurelle induit des arbitrages critiques sur l'accès et les infrastructures au détriment de l'électrification d'autres pans d'activité.</p>
+            </div>
+            <div class="grief-card">
+                <h2>☣️ Risques écologiques et industriels majeurs</h2>
+                <p>Les alertes portent sur la gestion thermique des installations, l'usage réglementé de gaz isolants à très fort effet de serre comme le SF6 dans les équipements de coupure haute tension, et les risques de non-maîtrise environnementale des fluides frigorigènes ou résidus de PFAS.</p>
+            </div>
+            <div class="grief-card">
+                <h2>📑 Contournement démocratique et réglementaire</h2>
+                <p>L'opposition fustige l'utilisation d'un cadre juridique morcelé, conçu selon elle pour lisser l'impact administratif, masquer les seuils cumulés d'emprise et contourner l'exposition réglementaire globale ou des classements plus contraignants.</p>
+            </div>
+            <div class="grief-card">
+                <h2>🔒 Souveraineté factice et ingérence étrangère</h2>
+                <p>La structure de financement par des capitaux internationaux massifs (70 % contrôlés par le fonds émirati MGX) cristallise la rupture doctrinale. Elle nourrit la contradiction d'un discours de souveraineté numérique adossé à des dépendances capitalistiques extra-européennes.</p>
+            </div>
+            <div class="grief-card">
+                <h2>💼 Mirage socio-économique</h2>
+                <p>Les syndicats contestent la balance réelle entre l'accaparement de l'infrastructure électrique territoriale et les créations nettes d'emplois locaux durables. Ils citent des précédents technologiques où les promesses de ruissellement industriel n'ont pas compensé les restructurations.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-vigilance" class="tab-content">
+        <div class="list-card">
+            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <ul id="vigilance-list">
+                </ul>
+        </div>
+
+        <div class="list-card">
+            <h2>📰 Médias et sources d'investigation répertoriés</h2>
+            <ul id="sources-list">
+                </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="actor-modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <div class="modal-field">
+                <label>Nom / Entité</label>
+                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+            </div>
+            <div class="modal-field">
+                <label>Fonction / Rattachement</label>
+                <p id="modal-role"></p>
+            </div>
+            <div class="modal-field">
+                <label>Positionnement ou Argument Principal</label>
+                <p id="modal-position"></p>
+            </div>
+            <div class="modal-field">
+                <label>Verbatim / Preuve documentaire</label>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="modal-field" style="margin:0;">
+                    <label>Orientation</label>
+                    <span id="modal-stance-badge" class="badge"></span>
+                </div>
+                <div class="modal-field" style="margin:0; text-align: right;">
+                    <label>Niveau de certitude</label>
+                    <p id="modal-certainty" class="certitude"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Injection directe de votre base de données consolidée
+        const projectData = {
+            meta: {
+                title: "Cartographie Interactive — Campus IA Fouju",
+                subtitle: "Projet de méga-campus de centres de données et calcul IA de 90 hectares (1,4 GW) soutenu par l'État et des fonds internationaux, faisant face à une forte opposition territoriale, environnementale et politique."
+            },
+            taxonomy: {
+                categories: {
+                    "all": "Tous les acteurs",
+                    "opposants": "Opposants & Experts",
+                    "elus-opp": "Élus Opposés/Critiques",
+                    "elus-fav": "Élus Favorables/Prudents",
+                    "orgs": "Orgs & Collectifs",
+                    "porteurs": "Porteurs & Économie"
+                },
+                stances: {
+                    "all": "Toutes les positions",
+                    "opposed": "Opposé / Critique",
+                    "favorable": "Favorable / Soutien",
+                    "neutral": "Prudent / Ambigü"
+                }
+            },
+            actors: [
+                { name: "Jean-François Dupont", category: "opposants", stance: "opposed", role: "FNE 77", position: "Opposant central : dénonce le caractère hors norme du projet, l'artificialisation accélérée, les risques de pollution PFAS et la procédure accélérée.", evidence: "Dénonce le caractère « hors norme » du projet.", certainty: "Haute" },
+                { name: "Jane Buisson", category: "opposants", stance: "opposed", role: "Vice-présidente de FNE 77", position: "A déposé une contribution officielle à l'enquête publique exigeant une nouvelle réunion publique et une rallonge des délais d'examen.", evidence: "Liée à FNE 77 dans la coordination locale.", certainty: "Haute" },
+                { name: "Pauline Isambert", category: "opposants", stance: "opposed", role: "Confédération paysanne 77", position: "Critique la perte de terres agricoles arables et conteste la souveraineté alimentaire.", evidence: "Souligne que 9 exploitations locales ont vendu leurs terres.", certainty: "Haute" },
+                { name: "Aline Aurias", category: "opposants", stance: "opposed", role: "Porte-parole de la Confédération paysanne", position: "Opposée à la démesure et au flou entourant les consommations d'eau et le foncier. Critique une souveraineté financée par des capitaux étrangers.", evidence: "Dénonce le flou entourant les consommations d'eau.", certainty: "Moyenne" },
+                { name: "William Elie", category: "opposants", stance: "opposed", role: "Alliance écologique et sociale", position: "Exige un moratoire immédiat et cherche à politiser le dossier pour en faire un enjeu de débat national.", evidence: "Soutien actif du réseau Solidaires Essonne.", certainty: "Haute" },
+                { name: "Dorothée Villemaux", category: "opposants", stance: "opposed", role: "Les Écologistes de Melun Val de Seine", position: "Alerte la population locale sur les impacts du projet qu'elle juge hautement problématique.", evidence: "Rattachée aux actions de terrain des Écologistes.", certainty: "Haute" },
+                { name: "Maxime Colin", category: "opposants", stance: "opposed", role: "FNE Île-de-France", position: "Conteste l'argument de souveraineté numérique nationale et met en cause le financement par le fonds souverain des Émirats arabes unis.", evidence: "Coordination régionale avec FNE IDF.", certainty: "Haute" },
+                { name: "Lou Welgrym", category: "opposants", stance: "opposed", role: "Secrétaire générale de Data for Good", position: "Critique la dérégulation administrative et la réduction systématique des capacités de recours juridiques des citoyens.", evidence: "Connectée au réseau d'expertise de La Quadrature du Net.", certainty: "Haute" },
+                { name: "Anne-Laure Ligozat", category: "opposants", stance: "opposed", role: "Professeure au LISN", position: "Déplore le manque de concertation publique et l'absence totale de grand débat national concernant la légitimité des usages du calcul.", evidence: "Soutien académique à l'opposition.", certainty: "Haute" },
+                { name: "Marie Garin", category: "opposants", stance: "opposed", role: "Chercheuse postdoctorante au CNRS", position: "Juge le dimensionnement de l'infrastructure déconnecté des besoins réels, reposant sur un pari spéculatif de marché.", evidence: "Analyse critique du dimensionnement infrastructurel.", certainty: "Haute" },
+                { name: "Marlène De Bank", category: "opposants", stance: "opposed", role: "The Shift Project", position: "Alerte sur la concurrence électrique et les risques majeurs d'arbitrages au détriment de pans entiers de la transition énergétique.", evidence: "Rapport et alerte technique issus du Shift Project.", certainty: "Haute" },
+                { name: "Ophélie Coelho", category: "opposants", stance: "opposed", role: "Chercheuse à l'IRIS", position: "Spécialiste de la géopolitique du numérique, elle estime que les processus de concertation arrivent trop tardivement.", evidence: "« La machine est déjà en route »", certainty: "Haute" },
+                { name: "Irénée Régnauld", category: "opposants", stance: "opposed", role: "Doctorant en sociologie", position: "Critique le gigantisme matériel et la dépendance technologique qu'il induit, plaidant pour une planification publique.", evidence: "Analyse socio-technique de la dépendance.", certainty: "Haute" },
+                { name: "Olivier Petitjean", category: "opposants", stance: "opposed", role: "Analyste à l'Observatoire des multinationales", position: "Dénonce la soumission des politiques publiques aux intérêts financiers étrangers et de la Silicon Valley.", evidence: "Auteur d'analyses critiques pour l'Observatoire.", certainty: "Haute" },
+                { name: "Nadia Salhi", category: "opposants", stance: "opposed", role: "Déléguée syndicale CGT chez STMicroelectronics", position: "Conteste le mirage des promesses d'emplois en s'appuyant sur les précédents industriels du directeur de projet.", evidence: "Tribune relayée dans L'Humanité sur les questions d'emploi.", certainty: "Haute" },
+                { name: "Laurence Allard", category: "opposants", stance: "opposed", role: "Sociologue des usages du numérique", position: "Observe et souligne la convergence citoyenne et l'appropriation transdisciplinaire exemplaire de la lutte de Fouju.", evidence: "Analyse de la mobilisation sur le terrain.", certainty: "Haute" },
+                { name: "Pauline Denis", category: "opposants", stance: "opposed", role: "Ingénieure au Shift Project", position: "S'indigne du découpage juridique du projet opéré selon elle pour contourner les réglementations et éviter un classement Seveso.", evidence: "Dénonciation du contournement de classement Seveso.", certainty: "Haute" },
+                { name: "Habitants Fernique", category: "opposants", stance: "opposed", role: "Habitants de Fouju", position: "Dénoncent une infrastructure industrielle colossale imposée sans consultation préalable.", evidence: "« Est-ce qu’on a vraiment besoin de ce centre ? »", certainty: "Haute" },
+                { name: "Christine Scialom", category: "opposants", stance: "opposed", role: "Propriétaire foncière locale", position: "Exprime un sentiment de déclassement territorial profond.", evidence: "« On a l’impression d’être les poubelles de Paris »", certainty: "Haute" },
+                { name: "Maud", category: "opposants", stance: "opposed", role: "Maraîchère biologique installée près du site", position: "Vivement inquiète des risques de pollution atmosphérique et de contamination des sols par les PFAS.", evidence: "Impact direct sur son exploitation agricole.", certainty: "Haute" },
+                { name: "Marie-Paule Direur", category: "opposants", stance: "opposed", role: "Habitante mobilisée au Bourget (lutte SEGRO)", position: "Incarne la jonction de terrain entre les différentes contestations de centres de données en Île-de-France.", evidence: "Passerelles de solidarité avec le Collectif du Bourget.", certainty: "Haute" },
+                { name: "Arnaud Saint-Martin", category: "elus-opp", stance: "opposed", role: "Député LFI de Seine-et-Marne", position: "Principal opposant politique au projet. Dénonce un projet inutile, énergivore et opaque porté par un courtier.", evidence: "« Fouju devient une cause nationale »", certainty: "Haute" },
+                { name: "Marianne Margaté", category: "elus-opp", stance: "opposed", role: "Sénatrice communiste de Seine-et-Marne", position: "S'oppose frontalement ; a déposé une question écrite fustigeant un contournement réglementaire par découpage artificiel du projet.", evidence: "Action parlementaire concertée avec le bloc de gauche.", certainty: "Haute" },
+                { name: "Céline Malaisé", category: "elus-opp", stance: "opposed", role: "Président du groupe de gauche à la Région IdF", position: "Dénonce l'opacité totale du dossier à l'échelle régionale, le projet ayant été dissimulé derrière les plans d'une prison.", evidence: "Contestation régionale officielle du bloc de gauche.", certainty: "Haute" },
+                { name: "Stéphanie Le Meur", category: "elus-opp", stance: "opposed", role: "Maire-adjointe socialiste de Moissy-Cramayel", position: "Critique la contrainte financière qui étrangle les communes et les pousse indirectement à accepter le projet au niveau de l'agglomération.", evidence: "Soutien au bloc de gauche régional.", certainty: "Haute" },
+                { name: "Jean-Luc Mélenchon", category: "elus-opp", stance: "opposed", role: "Figure nationale LFI", position: "Critique politique globale du modèle macro-économique, accusant l'exécutif de transformer la France.", evidence: "Dénonce la transformation en « colonie numérique ».", certainty: "Haute" },
+                { name: "Députés socialistes", category: "elus-opp", stance: "opposed", role: "Groupe socialiste à l'Assemblée nationale", position: "Position d'encadrement critique législatif via le dépôt d'amendements contre la simplification administrative sans contreparties.", evidence: "Dépôt d'amendements législatifs.", certainty: "Haute" },
+                { name: "Jonathan Wochenmayer", category: "elus-fav", stance: "favorable", role: "Maire de Fouju", position: "Très favorable au projet, il met en avant les retombées économiques et les recettes fiscales de sa commune.", evidence: "A interdit les rassemblements par arrêté municipal.", certainty: "Haute" },
+                { name: "Jean-Louis Thiériot", category: "elus-fav", stance: "favorable", role: "Député LR de Seine-et-Marne", position: "Soutient fermement l'infrastructure au nom de l'impératif de souveraineté technologique face aux blocs américain et chinois.", evidence: "Défense publique de la souveraineté technologique.", certainty: "Haute" },
+                { name: "Christian Poteau/Poteau", category: "elus-fav", stance: "neutral", role: "Président de la CC Brie des Rivières et Châteaux", position: "Plutôt favorable ou rassuré, tout en se disant attentif aux impacts réels sur l'eau, la mobilité et l'économie locale.", evidence: "Vigilance affirmée sur la gestion de l'eau et la mobilité.", certainty: "Moyenne" },
+                { name: "Hervé Jeannin", category: "elus-fav", stance: "neutral", role: "Maire de Crisenoy", position: "Posture prudente et nuancée ; s'inquiète des hauteurs de bâtiments, de l'insertion paysagère, des risques d'inondations et du voisinage de la prison.", evidence: "Exprime des inquiétudes techniques sur l'urbanisme local.", certainty: "Moyenne" },
+                { name: "Aymeric Durox", category: "elus-fav", stance: "favorable", role: "Sénateur RN de Seine-et-Marne", position: "Favorable par pragmatisme compétitif territorial : considère qu'il vaut mieux implanter ces infrastructures en France qu'à l'étranger.", evidence: "Argument de pragmatisme compétitif territorial.", certainty: "Haute" },
+                { name: "Denis Larghero", category: "elus-fav", stance: "favorable", role: "Maire UDI de Meudon", position: "Cité de manière générale pour sa défense des centres de données comme des leviers indispensables d'attractivité économique.", evidence: "Défense de l'attractivité économique régionale.", certainty: "Haute" },
+                { name: "Emmanuel Macron", category: "elus-fav", stance: "favorable", role: "Président de la République", position: "Totalement favorable au projet, promeut activement l'expansion à Choose France.", evidence: "Slogan « MGX choisit la France »", certainty: "Haute" },
+                { name: "Valérie Pécresse", category: "elus-fav", stance: "neutral", role: "Président de la Région Île-de-France", position: "Posture ambiguë / non prononcée publiquement ; citée uniquement comme pouvoir décisionnaire final pour un éventuel cofinancement.", evidence: "Absence de déclaration publique directe sur le projet.", certainty: "Faible" },
+                { name: "Stop Campus IA", category: "orgs", stance: "opposed", role: "Collectif d'opposition locale", position: "Structurant la contestation citoyenne et les rassemblements militants sur le terrain à Fouju and Champeaux.", evidence: "Coordination active avec FNE 77 et Les Soulèvements de la Terre.", certainty: "Haute" },
+                { name: "FNE 77", category: "orgs", stance: "opposed", role: "Association environnementale départementale", position: "Pivot technique de la contestation (conférence de presse du 13 mai, dépôt de contributions).", evidence: "A organisé la conférence de presse du 13 mai.", certainty: "Haute" },
+                { name: "FNE IDF", category: "orgs", stance: "opposed", role: "Fédération régionale environnementale", position: "Impliquée dans l'analyse juridique et la critique des implantations de centres de données en Île-de-France.", evidence: "Analyse juridique globale des implantations.", certainty: "Haute" },
+                { name: "Les Soulèvements de la Terre", category: "orgs", stance: "opposed", role: "Mouvement écologiste national", position: "Relais militant actif sur le terrain ayant mobilisé plus de 200 personnes lors des rassemblements du 24 mai.", evidence: "Mobilisation de 200 personnes constatée le 24 mai.", certainty: "Haute" },
+                { name: "Confédération paysanne 77", category: "orgs", stance: "opposed", role: "Syndicat agricole départemental", position: "Fermement opposé au projet au nom de la défense des terres arables et de la souveraineté alimentaire face au bétonnage.", evidence: "Défense coordonnée des terres arables avec FNE 77.", certainty: "Haute" },
+                { name: "Confédération paysanne IDF", category: "orgs", stance: "opposed", role: "Structure syndicale régionale", position: "Mobilisée contre l'accaparement et la pression foncière exercée sur les ceintures maraîchères franciliennes.", evidence: "Action syndicale régionale de terrain.", certainty: "Haute" },
+                { name: "LPO 77", category: "orgs", stance: "opposed", role: "Association de protection de la biodiversité", position: "Membre de la coalition Stop Campus IA, proposant des inventaires naturalistes contradictoires du site.", evidence: "Fournit des inventaires naturalistes contradictoires.", certainty: "Haute" },
+                { name: "Écologistes Melun Val de Seine", category: "orgs", stance: "opposed", role: "Structure politique écologiste locale", position: "Représentée par Dorothée Villemaux.", evidence: "Lien de rattachement avec les mobilisations de Dorothée Villemaux.", certainty: "Haute" },
+                { name: "Solidaires", category: "orgs", stance: "opposed", role: "Union syndicale", position: "Mobilisée au sein du collectif de contestation citoyenne et environnementale.", evidence: "Présence active aux mobilisations citoyennes.", certainty: "Haute" },
+                { name: "Solidaires Informatique", category: "orgs", stance: "opposed", role: "Syndicat sectoriel", position: "Présent lors des points presse pour apporter une expertise technique et sectorielle critique.", evidence: "Expertise technique sectorielle assumée publiquement.", certainty: "Haute" },
+                { name: "Solidaires Essonne", category: "orgs", stance: "opposed", role: "Structure syndicale locale", position: "Mobilisée en faveur d'un moratoire d'arrêt des constructions.", evidence: "Soutien apporté via l'intervention de William Elie.", certainty: "Haute" },
+                { name: "Alliance écologique et sociale", category: "orgs", stance: "opposed", role: "Coalition syndicats-associations", position: "Exigeant l'arrêt immédiat des simplifications administratives sans garanties.", evidence: "Exigence formelle d'arrêt des simplifications administratives.", certainty: "Haute" },
+                { name: "Attac", category: "orgs", stance: "opposed", role: "Association altermondialiste", position: "Présente lors de la mobilisation transdisciplinaire citoyenne du 24 mai.", evidence: "Intégrée au front commun avec Les Amis de la Terre.", certainty: "Haute" },
+                { name: "Les Amis de la Terre", category: "orgs", stance: "opposed", role: "Association environnementale nationale", position: "Intégrée à la coalition de contestation publique contre Campus IA.", evidence: "Membre de la coalition élargie.", certainty: "Haute" },
+                { name: "Extinction Rebellion", category: "orgs", stance: "opposed", role: "Collectif écologiste", position: "Engagé dans les actions directes et mobilisations de terrain à Champeaux.", evidence: "Allié en front commun avec Les Soulèvements de la Terre.", certainty: "Haute" },
+                { name: "Thibaud Desfossés", category: "porteurs", stance: "favorable", role: "Président de Campus IA / Directeur chez MGX", position: "Invoque l'indépendance de calcul des entreprises mais se mure derrière le secret des affaires sur la gouvernance.", evidence: "Direction opérationnelle et structurante pour MGX.", certainty: "Moyenne" },
+                { name: "MGX", category: "porteurs", stance: "favorable", role: "Fonds d'investissement souverain des Émirats arabes unis", position: "Actionnaire majoritaire à 70 % du projet. Lié à l'appareil sécuritaire émirati.", evidence: "Partenariat stratégique avec l'Élysée (Choose France).", certainty: "Haute" },
+                { name: "Bpifrance (BPI)", category: "porteurs", stance: "favorable", role: "Banque publique d'investissement française", position: "Actionnaire à 25 % assurant une présence de l'État dans la gouvernance (concède une souveraineté variable).", evidence: "Assure un rôle de co-investisseur stratégique étatique.", certainty: "Haute" },
+                { name: "Eiffage / Eiffage Énergie Systèmes", category: "porteurs", stance: "favorable", role: "Groupe industriel", position: "Attributaire officiel d'un marché industriel majeur de plus de 120 M€ pour la conception-réalisation de la sous-station haute tension.", evidence: "Bénéficiaire d'un contrat évalué à 120 M€.", certainty: "Haute" },
+                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire du réseau de transport d'électricité", position: "Signataire du contrat de raccordement électrique en amont de l'enquête publique.", evidence: "Raccordement contractuel établi avec Eiffage.", certainty: "Haute" },
+                { name: "Nvidia", category: "porteurs", stance: "favorable", role: "Multinationale technologique actionnaire à 4 %", position: "Équipant le complexe de Fouju avec ses processeurs et composants de calcul.", evidence: "Fournisseur de l'infrastructure de calcul.", certainty: "Haute" },
+                { name: "Printemps des luttes locales", category: "orgs", stance: "opposed", role: "Cadre militant et réseau de coordination", position: "Ayant encadré le pique-nique protestataire contre Campus IA.", evidence: "Encadrement direct de l'événement contestataire.", certainty: "Haute" },
+                { name: "Le Nuage était sous nos pieds", category: "orgs", stance: "opposed", role: "Collectif marseillais techno-critique", position: "Cité comme référence nationale de lutte d'appropriation technique.", evidence: "Connexion aux luttes techno-critiques nationales.", certainty: "Haute" },
+                { name: "Collectif du Bourget", category: "orgs", stance: "opposed", role: "Collectif local", position: "Opposé à un projet de centre de données Segro, établissant des passerelles de solidarité avec Fouju.", evidence: "Passerelles de solidarité avec Marie-Paule Direur.", certainty: "Haute" },
+                { name: "Collectif de Vitry-sur-Seine", category: "orgs", stance: "opposed", role: "Collectif citoyen", position: "Engagé dans la contestation francilienne globale contre la prolifération des infrastructures numériques.", evidence: "Implication dans la mobilisation francilienne transversale.", certainty: "Haute" },
+                { name: "Collectif de Wissous", category: "orgs", stance: "opposed", role: "Collectif francilien", position: "Engagé dans la contestation contre un projet distinct de l'opérateur CyrusOne.", evidence: "Mise en réseau des contestations de data centers.", certainty: "Haute" },
+                { name: "La Quadrature du Net", category: "orgs", stance: "opposed", role: "Association de défense des libertés numériques", position: "Réclamant un moratoire d'urbanisme sur les grands entrepôts de serveurs.", evidence: "Apporte un soutien de réseau expert à Data for Good.", certainty: "Haute" },
+                { name: "Hiatus", category: "orgs", stance: "opposed", role: "Collectif d'analyse techno-critique", position: "Allié de La Quadrature du Net.", evidence: "Soutien analytique et techno-critique en réseau.", certainty: "Haute" },
+                { name: "STopMicro", category: "orgs", stance: "opposed", role: "Collectif techno-critique grenoblois", position: "Cité comme référence de mobilisation contre les industries numériques de forte puissance.", evidence: "Inspiration structurante pour les mouvements locaux.", certainty: "Haute" },
+                { name: "MRAe", category: "orgs", stance: "neutral", role: "Mission Régionale d'Autorité Environnementale", position: "Émet un avis d'alerte critique sur l'usage de gaz SF6 et les risques de fuites de PFAS.", evidence: "Avis d'alerte environnementale formel déposé.", certainty: "Haute" },
+                { name: "L’Européenne", category: "porteurs", stance: "neutral", role: "Ancien porteur du projet logistique abandonné", position: "Bénéficiaire d'un protocole d'accord transactionnel avec la CC2SO.", evidence: "Passé administratif documenté avec le commissaire-enquêteur.", certainty: "Haute" },
+                { name: "Commissaire-enquêteur", category: "orgs", stance: "neutral", role: "Autorité indépendante", position: "Ayant rendu un avis défavorable motivé sur l'ancien projet logistique au vu des nuisances de proximité.", evidence: "Avis défavorable émis sur l'antériorité foncière.", certainty: "Haute" }
+            ],
+            griefs: [], // Restitué en dur dans l'HTML de l'onglet 2
+            vigilance: [
+                "<strong>Gouvernance et Secret des affaires :</strong> Thibaud Desfossés (MGX) refuse de détailler la structure de gouvernance du projet et se mure derrière le secret des affaires.",
+                "<strong>Incertitudes des Consommations :</strong> Flou persistant entourant les volumes réels de consommation en eau et l'emprise foncière exacte, dénoncé par les organisations agricoles.",
+                "<strong>Positionnement Politique Régional :</strong> Posture ambiguë et non prononcée publiquement de Valérie Pécresse (Région IdF), maintenant une incertitude sur le rôle de la région concernant un éventuel cofinancement.",
+                "<strong>Évaluation Environnementale :</strong> Doutes et alertes critiques soulevés par la MRAe sur les protocoles d'utilisation du gaz SF6 et la non-maîtrise des risques de fuites de PFAS."
+            ],
+            sources: [
+                "<strong>Le Chiffon :</strong> Journal militant francilien ayant organisé des soirées-débats 'Contre les data centers et leur monde'.",
+                "<strong>Actualité des luttes :</strong> Média militant indépendant assurant la couverture et le relais des mobilisations écologiques d'Île-de-France.",
+                "<strong>mesinfos.fr :</strong> Média d'information économique et légal ayant rendu publique l'attribution du marché de raccordement d'Eiffage.",
+                "<strong>L’Humanité :</strong> Quotidien national d'enquêtes (Pierric Marissal). Source ayant révélé le contrôle émirati (70% MGX) et les risques environnementaux.",
+                "<strong>Observatoire des multinationales :</strong> Plateforme d'investigation économique ayant démonté de manière critique les structures de capitaux cachées derrière Choose France."
+            ]
+        };
+
+        // États de filtrage croisé globaux
+        let activeCategory = 'all';
+        let activeStance = 'all';
+
+        // Initialisation de l'application
+        document.addEventListener("DOMContentLoaded", () => {
+            // Configuration des en-têtes
+            document.getElementById('header-title').innerText = projectData.meta.title;
+            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+
+            // Rendu dynamique des filtres et listes annexes
+            renderFilters();
+            renderGrid();
+            renderLists();
+        });
+
+        // Commutation des onglets principaux
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Construction des éléments de filtrage avec calcul automatique
+        function renderFilters() {
+            const catContainer = document.getElementById('cat-filters-container');
+            const stanceContainer = document.getElementById('stance-filters-container');
+            
+            catContainer.innerHTML = '';
+            stanceContainer.innerHTML = '';
+
+            // 1. Boutons de catégorie
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
+                const activeClass = key === activeCategory ? 'active' : '';
+                catContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
+                        <span>${label}</span> <span class="count">${count}</span>
+                    </button>
+                `;
+            });
+
+            // 2. Boutons d'orientation
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const activeClass = key === activeStance ? 'active' : '';
+                stanceContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+                        <span>${label}</span>
+                    </button>
+                `;
+            });
+        }
+
+        function setCategoryFilter(category, el) {
+            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeCategory = category;
+            renderGrid();
+        }
+
+        function setStanceFilter(stance, el) {
+            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeStance = stance;
+            renderGrid();
+        }
+
+        // Rendu dynamique de la grille filtrée des acteurs
+        function renderGrid() {
+            const grid = document.getElementById('actors-grid');
+            grid.innerHTML = '';
+
+            const filteredActors = projectData.actors.filter(actor => {
+                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
+                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
+                return matchCategory && matchStance;
+            });
+
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                return;
+            }
+
+            filteredActors.forEach(actor => {
+                const card = document.createElement('div');
+                card.className = `actor-card ${actor.stance}`;
+                card.onclick = () => openActorModal(actor);
+
+                card.innerHTML = `
+                    <div class="actor-header">
+                        <div class="actor-name">${actor.name}</div>
+                        <div class="actor-role">${actor.role}</div>
+                    </div>
+                    <div class="actor-body">${actor.position}</div>
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
+                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Rendu des listes statiques de l'onglet 3
+        function renderLists() {
+            const vigList = document.getElementById('vigilance-list');
+            const srcList = document.getElementById('sources-list');
+
+            vigList.innerHTML = '';
+            srcList.innerHTML = '';
+
+            projectData.vigilance.forEach(item => vigList.innerHTML += `<li>${item}</li>`);
+            projectData.sources.forEach(item => srcList.innerHTML += `<li>${item}</li>`);
+        }
+
+        // Fenêtre modale : Affichage et hydratation
+        function openActorModal(actor) {
+            document.getElementById('modal-name').innerText = actor.name;
+            document.getElementById('modal-role').innerText = actor.role;
+            document.getElementById('modal-position').innerText = actor.position;
+            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait.";
+            document.getElementById('modal-certainty').innerText = actor.certainty;
+
+            const badge = document.getElementById('modal-stance-badge');
+            badge.className = `badge ${actor.stance}`;
+            badge.innerText = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('actor-modal');
+            modal.classList.toggle('active', show);
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'actor-modal') {
+                toggleModal(false);
+            }
+        }
+    </script>
+</body>
+</html>
