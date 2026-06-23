@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie Interactive — ZAC du Bosquel</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --color-opposed: #ef4444;
+            --color-opposed-light: #fee2e2;
+            --color-favorable: #22c55e;
+            --color-favorable-light: #dcfce7;
+            --color-neutral: #f59e0b;
+            --color-neutral-light: #fef3c7;
+            
+            --primary: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Menu Onglets */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interface Cartographie */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Filtres */
+        .filters-sidebar {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn .count {
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .filter-btn.active .count {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grille des Cartes Acteurs */
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actor-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .actor-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .actor-body {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .actor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.025em;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modal Détails Acteur */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            position: relative;
+            animation: modalAnim 0.2s ease-out;
+        }
+
+        @keyframes modalAnim {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-field {
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-field p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-verbatim {
+            background-color: var(--bg-primary);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        /* Styles Onglet Griefs */
+        .griefs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .griefs-container { grid-template-columns: 1fr; }
+        }
+
+        .grief-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .grief-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Listes & Sources */
+        .list-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .list-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .list-card ul {
+            padding-left: 1.5rem;
+        }
+
+        .list-card li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">Chargement...</h1>
+        <p id="header-subtitle"></p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('carto')">Cartographie des Acteurs</button>
+        <button class="tab-btn" onclick="switchTab('griefs')">Synthèse des Griefs</button>
+        <button class="tab-btn" onclick="switchTab('vigilance')">Points de Vigilance &amp; Sources</button>
+    </nav>
+
+    <div id="tab-carto" class="tab-content active">
+        <div class="dashboard-layout">
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+                    <div class="filter-options" id="cat-filters-container">
+                        </div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Positionnement</h3>
+                    <div class="filter-options" id="stance-filters-container">
+                        </div>
+                </div>
+            </aside>
+
+            <main class="actors-grid" id="actors-grid">
+                </main>
+        </div>
+    </div>
+
+    <div id="tab-griefs" class="tab-content">
+        <div class="griefs-container" id="griefs-grid">
+            </div>
+    </div>
+
+    <div id="tab-vigilance" class="tab-content">
+        <div class="list-card">
+            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <ul id="vigilance-list">
+                </ul>
+        </div>
+
+        <div class="list-card">
+            <h2>📰 Médias et sources d'investigation répertoriés</h2>
+            <ul id="sources-list">
+                </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="actor-modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <div class="modal-field">
+                <label>Nom / Entité</label>
+                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+            </div>
+            <div class="modal-field">
+                <label>Fonction / Rattachement</label>
+                <p id="modal-role"></p>
+            </div>
+            <div class="modal-field">
+                <label>Positionnement ou Argument Principal</label>
+                <p id="modal-position"></p>
+            </div>
+            <div class="modal-field">
+                <label>Verbatim / Preuve documentaire</label>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="modal-field" style="margin:0;">
+                    <label>Orientation</label>
+                    <span id="modal-stance-badge" class="badge"></span>
+                </div>
+                <div class="modal-field" style="margin:0; text-align: right;">
+                    <label>Niveau de certitude</label>
+                    <p id="modal-certainty" class="certitude"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Injection de votre base de données automatisée du Bosquel
+        const projectData = {
+            meta: {
+                title: "Cartographie Interactive — Campus numérique et industriel du Bosquel",
+                subtitle: "Projet de supercalculateur et campus IA pré-réservant 1 GW sur la ZAC du Bosquel (46 hectares). Porté par la CC2SO et soutenu par l'État via Fast Track RTE, le projet implique des capitaux internationaux (SoftBank) et soulève de vives interrogations locales sur la ressource en eau et l'intégration territoriale."
+            },
+            taxonomy: {
+                categories: {
+                    "all": "Tous les acteurs",
+                    "opposants": "Opposants & Experts",
+                    "elus-opp": "Élus Opposés/Critiques",
+                    "elus-fav": "Élus Favorables/Prudents",
+                    "orgs": "Orgs & Collectifs",
+                    "porteurs": "Porteurs & Économie"
+                },
+                stances: {
+                    "all": "Toutes les positions",
+                    "opposed": "Opposé / Critique",
+                    "favorable": "Favorable / Soutien",
+                    "neutral": "Prudent / Ambigü"
+                }
+            },
+            actors: [
+                { name: "Silver Bands France Computer Center Bosquel", category: "porteurs", stance: "favorable", role: "Lauréat de l’AMI", position: "Choisi par les élus de la CC2SO pour construire puis exploiter le supercalculateur.", evidence: "Entité lauréate directement liée au management de SoftBank.", certainty: "Haute" },
+                { name: "Société spécifique au Bosquel", category: "porteurs", stance: "favorable", role: "Société locale", position: "Entité annoncée comme devant être créée avec siège au Bosquel et obligation de travailler avec les étudiants amiénois.", evidence: "Création conditionnée par le cahier des charges de la CC2SO.", certainty: "Haute" },
+                { name: "Fluidstack", category: "porteurs", stance: "neutral", role: "Ancien projet pressenti", position: "Finalement abandonné au profit d’une réorientation vers les États-Unis.", evidence: "Retrait justifié par des arbitrages de marché selon la presse économique.", certainty: "Haute" },
+                { name: "CC2SO", category: "elus-fav", stance: "favorable", role: "Communauté de communes Somme Sud-Ouest", position: "Pilote territorial de l’AMI et propriétaire des terrains via un bail de 99 ans.", evidence: "Organisateur institutionnel porteur du bail foncier.", certainty: "Haute" },
+                { name: "Alain Desfosses", category: "elus-fav", stance: "favorable", role: "Président de la CC2SO", position: "Défend le projet, rappelle l’urgence de choisir un opérateur avant l’échéance Fast Track et promet une présentation aux riverains.", evidence: "Pilotage direct des décisions de la communauté de communes.", certainty: "Haute" },
+                { name: "Laurent Snoeck", category: "porteurs", stance: "neutral", role: "Directeur général des services", position: "Répond aux inquiétudes sur l’eau en évoquant un circuit fermé et une consommation de 265 m³/an.", evidence: "Justification chiffrée apportée en réponse technique.", certainty: "Haute" },
+                { name: "Arnaud De Monclin", category: "elus-opp", stance: "opposed", role: "Maire de Courcelles-sous-Thoix", position: "Exprime une inquiétude légitime sur les besoins en eau et demande une étude indépendante sur la nappe phréatique.", evidence: "Requête formelle d'expertise hydrique indépendante.", certainty: "Haute" },
+                { name: "Maison des Jeunes d’Hornoy-le-Bourg", category: "orgs", stance: "neutral", role: "Structure d'accueil", position: "Lieu de la réunion communautaire durant laquelle le choix du lauréat de l’AMI est présenté.", evidence: "Héberge le processus de consultation locale.", certainty: "Haute" },
+                { name: "État", category: "elus-fav", stance: "favorable", role: "Pouvoir public national", position: "Demande à RTE de pré-réserver une capacité de 1 GW sur le site du Bosquel ; inscrit le site dans la logique Fast Track.", evidence: "Validation de l'inscription Fast Track.", certainty: "Haute" },
+                { name: "Bercy", category: "elus-fav", stance: "favorable", role: "Ministère de l'Économie", position: "Suit de près la sécurisation des investissements IA et la sélection des sites stratégiques de centres de données.", evidence: "Suivi ministériel des enjeux de souveraineté.", certainty: "Haute" },
+                { name: "Anne Le Hénanff", category: "elus-fav", stance: "favorable", role: "Ministre déléguée chargée de l’IA et du Numérique", position: "Associée aux Rencontres des centres de données et au suivi des sites sécurisés.", evidence: "Représentation gouvernementale sectorielle.", certainty: "Haute" },
+                { name: "François Bayrou", category: "elus-fav", stance: "favorable", role: "Ancien acteur gouvernemental/Haut-commissaire", position: "Cité comme ayant annoncé une liste de sites industriels clés en main dédiés aux data centers.", evidence: "Annonce officielle des sites clés en main.", certainty: "Haute" },
+                { name: "Emmanuel Macron", category: "elus-fav", stance: "favorable", role: "Président de la République", position: "Porteur politique du plan IA. A directement rencontré Masayoshi Son (SoftBank) dans le cadre de la relance du projet du Bosquel.", evidence: "Rencontre diplomatique et économique au sommet.", certainty: "Haute" },
+                { name: "CRE", category: "orgs", stance: "neutral", role: "Commission de régulation de l'énergie", position: "A approuvé la procédure spécifique de raccordement rapide pour installations de très forte puissance.", evidence: "Approbation réglementaire actée.", certainty: "Haute" },
+                { name: "DGE", category: "orgs", stance: "neutral", role: "Direction générale des entreprises", position: "Citée dans l’accompagnement des porteurs de projets via la Task Force de l’État.", evidence: "Intégration opérationnelle dans la Task Force.", certainty: "Haute" },
+                { name: "Business France", category: "orgs", stance: "neutral", role: "Agence nationale", position: "Membre de la Task Force de l’État accompagnant les entreprises de data centers.", evidence: "Mission de promotion de l'attractivité.", certainty: "Haute" },
+                { name: "RTE", category: "orgs", stance: "neutral", role: "Gestionnaire du réseau de transport", position: "Opère la pré-réservation de capacité, procédure Fast Track et raccordement prioritaire.", evidence: "Contrôle la connectivité au réseau électrique.", certainty: "Haute" },
+                { name: "Nathalie Lemaître", category: "orgs", stance: "neutral", role: "Directrice générale du pôle Clients Systèmes Innovation chez RTE", position: "Alerte sur les capacités réservées et la nécessité de servir les projets les plus crédibles.", evidence: "Formule des réserves sur l'allocation Fast Track.", certainty: "Moyenne" },
+                { name: "EDF", category: "porteurs", stance: "neutral", role: "Énergéticien", position: "Acteur proposant ou identifiant des sites d’implantation possibles en Picardie.", evidence: "Acteur foncier et énergétique du territoire.", certainty: "Haute" },
+                { name: "Étudiants amiénois", category: "orgs", stance: "neutral", role: "Bénéficiaires académiques", position: "Le futur opérateur doit travailler avec eux, selon les obligations évoquées par la CC2SO.", evidence: "Cible d'un engagement du cahier des charges.", certainty: "Haute" },
+                { name: "Entreprises et start-up utilisatrices", category: "porteurs", stance: "favorable", role: "Bénéficiaires économiques", position: "Des espaces doivent être dédiés aux entreprises souhaitant utiliser la puissance du supercalculateur.", evidence: "Intégration prévue à l'écosystème du projet.", certainty: "Haute" },
+                { name: "Mistral AI", category: "porteurs", stance: "neutral", role: "Acteur IA français", position: "Symbole des besoins en calcul souverain ; fait l'objet d'un différend commercial distinct avec Sesterce.", evidence: "Litige commercial documenté.", certainty: "Haute" },
+                { name: "Eclairion", category: "porteurs", stance: "neutral", role: "Opérateur de data center", position: "Cité dans le contexte du retrait de Fluidstack sur un projet en région parisienne.", evidence: "Acteur de comparaison sectorielle.", certainty: "Haute" },
+                { name: "Anthropic", category: "porteurs", stance: "neutral", role: "Entreprise IA", position: "Client américain de Fluidstack dans le cadre d’un contrat massif aux États-Unis.", evidence: "Responsable indirect du retrait local de Fluidstack.", certainty: "Haute" },
+                { name: "Google", category: "porteurs", stance: "neutral", role: "Multinationale tech", position: "Investisseur potentiel dans Fluidstack, renforçant l’attraction américaine.", evidence: "Rôle dans le pivot stratégique de Fluidstack.", certainty: "Haute" },
+                { name: "Nvidia", category: "porteurs", stance: "neutral", role: "Fabricant de GPU", position: "Fournisseur dont les délais conditionnent les projets de calcul IA.", evidence: "Dépendance technologique structurelle.", certainty: "Haute" },
+                { name: "Camille Ego", category: "opposants", stance: "opposed", role: "Présidente de l'association locale", position: "Dénonce l’opacité, le manque d'information des habitants, la proximité immédiate avec les habitations, le bruit et les risques liés à l'eau.", evidence: "Mène la contestation citoyenne locale.", certainty: "Haute" },
+                { name: "Association du Bosquel et des villages voisins", category: "orgs", stance: "opposed", role: "Association locale de protection", position: "Porte les inquiétudes concrètes des riverains face aux nuisances de proximité et aux risques écologiques locaux.", evidence: "Organisation centralisant les recours territoriaux.", certainty: "Haute" },
+                { name: "Ancien membre de la Dreal", category: "opposants", stance: "opposed", role: "Expert technique anonyme", position: "Alerte sur les volumes d'eau massifs nécessaires, la compatibilité réglementaire avec le SAGE et l'absence de traitement du sujet dans l'AMI.", evidence: "Critique fondée sur l'expertise réglementaire environnementale.", certainty: "Haute" },
+                { name: "Robert Fievet", category: "opposants", stance: "opposed", role: "Habitant d'Amiens", position: "Auteur d'une contribution critique nuancée sur l'artificialisation des terres, la sécheresse et le faible ratio emplois/investissement.", evidence: "Dépôt d'une contribution formelle documentée.", certainty: "Haute" },
+                { name: "Martine Delépine", category: "elus-fav", stance: "neutral", role: "Maire du Bosquel", position: "Prudente et inquiète, reconnaît la disproportion du projet et les risques de conflits d'usage, tout en estimant complexe de s'y opposer.", evidence: "Exprime une forte incertitude et prudence dans la presse.", certainty: "Moyenne" },
+                { name: "Sylvain Charbonnier", category: "elus-fav", stance: "neutral", role: "Maire de Molliens-Dreuil", position: "Prudent et ambigu ; juge le montant du dédommagement transactionnel à L’Européenne 'très élevé'.", evidence: "Formule des doutes sur les montages transactionnels.", certainty: "Moyenne" },
+                { name: "Rollon Mouchel-Blaisot", category: "elus-fav", stance: "favorable", role: "Préfet de la Somme", position: "Présente le campus comme un enjeu de souveraineté et assure publiquement que l'impact sur l'eau sera minime.", evidence: "Caution étatique et rassurance officielle locale.", certainty: "Haute" },
+                { name: "Préfecture de la Somme", category: "elus-fav", stance: "favorable", role: "Administration territoriale d’État", position: "Assure le cadrage, le suivi des procédures et porte la présentation publique officielle du projet.", evidence: "Cadrage administratif direct.", certainty: "Haute" },
+                { name: "Région Hauts-de-France", category: "elus-fav", stance: "favorable", role: "Collectivité régionale", position: "Partenaire clé de la CC2SO, désignée comme future cogestionnaire du fonds de dotation de 10 M€.", evidence: "Appui politique et financier via le fonds de dotation.", certainty: "Haute" },
+                { name: "Dreal des Hauts-de-France", category: "orgs", stance: "neutral", role: "Administration environnementale", position: "Citée indirectement dans le corpus via les alertes techniques d'un ex-agent.", evidence: "Pas de prise de position officielle à ce stade.", certainty: "Faible" },
+                { name: "Commissaire-enquêteur", category: "orgs", stance: "neutral", role: "Autorité indépendante", position: "Avait rendu un avis défavorable motivé sur l'ancien projet logistique du site en raison des nuisances.", evidence: "Antériorité juridique défavorable sur le foncier.", certainty: "Haute" },
+                { name: "SoftBank Group", category: "porteurs", stance: "favorable", role: "Groupe technologique japonais", position: "Financeur et actionnaire majoritaire de la coentreprise porteuse du projet avec Sesterce ; pivot financier du dossier.", evidence: "Validation par le sommet de l'État.", certainty: "Haute" },
+                { name: "Sesterce", category: "porteurs", stance: "favorable", role: "Société française opératrice", position: "Désignée comme opérateur opérationnel et réalisateur du datacenter.", evidence: "Soumise à des interrogations sur sa surface financière réelle.", certainty: "Moyenne" },
+                { name: "Masayoshi Son", category: "porteurs", stance: "favorable", role: "Patron-fondateur de SoftBank", position: "A dévoilé l'envergure de l'investissement et s'est entretenu directement avec Emmanuel Macron.", evidence: "Pilotage stratégique international.", certainty: "Haute" },
+                { name: "Adam Westhead", category: "porteurs", stance: "favorable", role: "Avocat d'affaires", position: "Dirigeant direct identifié de la structure Silver Bands France, rattaché à SoftBank.", evidence: "Lien juridique révélé par l'investigation journalistique.", certainty: "Haute" },
+                { name: "Patriarche", category: "porteurs", stance: "favorable", role: "Cabinet d'architecture", position: "Sélectionné pour concevoir et superviser le futur complexe technologique du Bosquel.", evidence: "Attributaire opérationnel de la conception.", certainty: "Haute" },
+                { name: "Damien Patriarche", category: "porteurs", stance: "favorable", role: "Architecte en chef", position: "Défend l'intégration paysagère fine du bâti et le recours impératif à un système de refroidissement en circuit fermé.", evidence: "Porte-parole technique rassurant sur le volet environnemental.", certainty: "Haute" },
+                { name: "L’Européenne", category: "porteurs", stance: "neutral", role: "Ancien porteur foncier", position: "Bénéficiaire d'un accord transactionnel financier avec la CC2SO pour bloquer tout recours futur.", evidence: "Protocole financier mis en lumière.", certainty: "Haute" },
+                { name: "Youssef El Manssouri", category: "porteurs", stance: "favorable", role: "Entrepreneur cofondateur de Sesterce", position: "Impliqué dans les négociations industrielles du projet.", evidence: "Position exécutive dans la structure d'exploitation.", certainty: "Haute" },
+                { name: "Anthony Tchakerian", category: "porteurs", stance: "favorable", role: "Dirigeant associé de Sesterce", position: "Également lié à un projet parallèle implanté dans la Drôme.", evidence: "Implication dans des projets parallèles critiqués.", certainty: "Haute" },
+                { name: "AC-DC Rovaltain", category: "orgs", stance: "opposed", role: "Collectif d'opposants de la Drôme", position: "A contesté un projet de Sesterce et mis en évidence un décalage sur les chiffres réels de l'emploi.", evidence: "Précédent militant servant d'argumentaire de comparaison.", certainty: "Haute" },
+                { name: "Cloud Temple", category: "porteurs", stance: "neutral", role: "Acteur de datacenter (Oise)", position: "Mobilisé dans le corpus uniquement comme référence technique de comparaison de puissance électrique.", evidence: "Donnée sectorielle de référence.", certainty: "Haute" }
+            ],
+            griefs: [
+                { title: "☣️ Inquiétude sur l’eau", text: "Point de tension majeur renforcé par les volumes d'eau critiques requis pour le refroidissement des baies de calcul, les risques de sécheresse cumulative, les conflits d'usage avec le milieu agricole local et la stricte compatibilité réglementaire avec les objectifs de nappe fixés par le SAGE." },
+                { title: "💧 Nappe phréatique", text: "Ressource hydrique souterraine dont le niveau et la capacité de renouvellement sont fortement interrogés par les riverains et experts au regard des prélèvements requis par le projet, menaçant la résilience des communes environnantes." },
+                { title: "💼 Crédibilité des porteurs", text: "Sujet de vigilance soulevé en interne par RTE visant à sortir de la logique passive 'premier demandeur, premier servi' afin de sécuriser l'allocation de puissance du réseau haute tension (1 GW) uniquement au profit d'opérateurs disposant de surfaces financières matures." },
+                { title: "📑 Séisme Fluidstack", text: "L'épisode de retrait surprise de Fluidstack fragilise temporairement le plan d'attractivité numérique national. Les documents soulignent un arbitrage de nature financière et un pivot stratégique prioritaire du marché au profit des géants de la Big Tech américaine (Anthropic, Google)." },
+                { title: "🔒 Souveraineté en question", text: "Argument central brandi par l'exécutif pour légitimer la structure d'accueil 'clés en main' Fast Track, mais frontalement mis à mal par l'opposition territoriale en raison de la dépendance exclusive aux capitaux du japonais SoftBank et aux puces Nvidia." }
+            ],
+            vigilance: [
+                "<strong>Crédibilité et Dimensionnement :</strong> Inquiétudes formalisées (notamment relayées par RTE et Mediacités) sur la surface financière propre de la jeune pousse Sesterce pour assumer un site d'une telle envergure (1 GW), contrastant avec le poids capitalistique écrasant de SoftBank.",
+                "<strong>Ressources Hydriques et SAGE :</strong> Opposition technique documentée concernant la gestion de l'eau (conflits d'usage vs circuit fermé défendu par l'architecte Damien Patriarche), avec des craintes directes de rupture sur la nappe phréatique en période de sécheresse.",
+                "<strong>Opacité Administrative et Foncier :</strong> L'association de protection du Bosquel et les maires des communes périphériques dénoncent un manque flagrant de concertation de la CC2SO, accentué par les conditions financières opaques du protocole transactionnel avec L’Européenne.",
+                "<strong>Paradoxe de Souveraineté Numérique :</strong> Le cadre législatif accéléré sert l'indépendance de calcul nationale, mais le foncier (bail de 99 ans) et les infrastructures d'exploitation dépendent d'intérêts financiers extracommunautaires et du droit extraterritorial sous-jacent."
+            ],
+            sources: [
+                "<strong>Courrier picard :</strong> Quotidien régional de référence, source centrale sur le calendrier des délibérations de la CC2SO et les contributions des habitants.",
+                "<strong>Mediacités :</strong> Média d'investigation locale indépendant ayant mis en lumière les clauses d'indemnisation financière opaques signées avec l'ancien opérateur L'Européenne.",
+                "<strong>L’Informé :</strong> Journal économique spécialisé ayant révélé le différend commercial hors site opposant Sesterce à l'acteur tricolore Mistral AI.",
+                "<strong>La Tribune / Le Figaro / Bloomberg :</strong> Couverture macro-économique internationale explicitant les coulisses du pivot de Fluidstack vers les États-Unis au détriment du site de Picardie.",
+                "<strong>ici Picardie / France 3 Hauts-de-France :</strong> Audiovisuels publics régionaux ayant diffusé les interviews techniques de Martine Delépine et du préfet Rollon Mouchel-Blaisot.",
+                "<strong>Services RTE / L’Usine Nouvelle / Next INpact :</strong> Sources institutionnelles et sectorielles documentant la mise en œuvre technique de la procédure de raccordement d'urgence Fast Track approuvée par la CRE."
+            ]
+        };
+
+        // États globaux des filtres croisés
+        let activeCategory = 'all';
+        let activeStance = 'all';
+
+        // Initialisation de la page
+        document.addEventListener("DOMContentLoaded", () => {
+            // Remplissage des métadonnées dynamiques de l'en-tête
+            document.getElementById('header-title').innerText = projectData.meta.title;
+            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+
+            // Rendu complet des interfaces de l'application
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+        });
+
+        // Gestion de la navigation entre onglets
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Construction dynamique des filtres de la sidebar et calcul des totaux
+        function renderFilters() {
+            const catContainer = document.getElementById('cat-filters-container');
+            const stanceContainer = document.getElementById('stance-filters-container');
+            
+            catContainer.innerHTML = '';
+            stanceContainer.innerHTML = '';
+
+            // 1. Génération Filtres Catégories
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
+                const activeClass = key === activeCategory ? 'active' : '';
+                catContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
+                        <span>${label}</span> <span class="count">${count}</span>
+                    </button>
+                `;
+            });
+
+            // 2. Génération Filtres Positionnements (Stances)
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const activeClass = key === activeStance ? 'active' : '';
+                stanceContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+                        <span>${label}</span>
+                    </button>
+                `;
+            });
+        }
+
+        function setCategoryFilter(category, el) {
+            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeCategory = category;
+            renderGrid();
+        }
+
+        function setStanceFilter(stance, el) {
+            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeStance = stance;
+            renderGrid();
+        }
+
+        // Rendu dynamique de la grille filtrée des acteurs
+        function renderGrid() {
+            const grid = document.getElementById('actors-grid');
+            grid.innerHTML = '';
+
+            const filteredActors = projectData.actors.filter(actor => {
+                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
+                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
+                return matchCategory && matchStance;
+            });
+
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                return;
+            }
+
+            filteredActors.forEach(actor => {
+                const card = document.createElement('div');
+                card.className = `actor-card ${actor.stance}`;
+                card.onclick = () => openActorModal(actor);
+
+                card.innerHTML = `
+                    <div class="actor-header">
+                        <div class="actor-name">${actor.name}</div>
+                        <div class="actor-role">${actor.role}</div>
+                    </div>
+                    <div class="actor-body">${actor.position}</div>
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
+                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Rendu dynamique des griefs extraits (Onglet 2)
+        function renderGriefs() {
+            const container = document.getElementById('griefs-grid');
+            container.innerHTML = '';
+
+            projectData.griefs.forEach(g => {
+                container.innerHTML += `
+                    <div class="grief-card">
+                        <h2>${g.title}</h2>
+                        <p>${g.text}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Rendu des listes analytiques (Onglet 3)
+        function renderLists() {
+            const vigList = document.getElementById('vigilance-list');
+            const srcList = document.getElementById('sources-list');
+
+            vigList.innerHTML = '';
+            srcList.innerHTML = '';
+
+            projectData.vigilance.forEach(item => vigList.innerHTML += `<li>${item}</li>`);
+            projectData.sources.forEach(item => srcList.innerHTML += `<li>${item}</li>`);
+        }
+
+        // Fenêtre modale d'affichage du détail complet
+        function openActorModal(actor) {
+            document.getElementById('modal-name').innerText = actor.name;
+            document.getElementById('modal-role').innerText = actor.role;
+            document.getElementById('modal-position').innerText = actor.position;
+            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucune preuve littérale isolée.";
+            document.getElementById('modal-certainty').innerText = actor.certainty;
+
+            const badge = document.getElementById('modal-stance-badge');
+            badge.className = `badge ${actor.stance}`;
+            badge.innerText = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('actor-modal');
+            modal.classList.toggle('active', show);
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'actor-modal') {
+                toggleModal(false);
+            }
+        }
+    </script>
+</body>
+</html>
