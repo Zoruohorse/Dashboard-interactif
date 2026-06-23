@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie Interactive — Data Center Google Ozans</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --color-opposed: #ef4444;
+            --color-opposed-light: #fee2e2;
+            --color-favorable: #22c55e;
+            --color-favorable-light: #dcfce7;
+            --color-neutral: #f59e0b;
+            --color-neutral-light: #fef3c7;
+            
+            --primary: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Menu Onglets */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interface Cartographie */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Filtres */
+        .filters-sidebar {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn .count {
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .filter-btn.active .count {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grille des Cartes Acteurs */
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actor-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .actor-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .actor-body {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .actor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.025em;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modal Détails Acteur */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            position: relative;
+            animation: modalAnim 0.2s ease-out;
+        }
+
+        @keyframes modalAnim {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-field {
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-field p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-verbatim {
+            background-color: var(--bg-primary);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        /* Styles Onglet Griefs */
+        .griefs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .griefs-container { grid-template-columns: 1fr; }
+        }
+
+        .grief-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .grief-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Listes & Sources */
+        .list-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .list-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .list-card ul {
+            padding-left: 1.5rem;
+        }
+
+        .list-card li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">Chargement...</h1>
+        <p id="header-subtitle"></p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('carto')">Cartographie des Acteurs</button>
+        <button class="tab-btn" onclick="switchTab('griefs')">Synthèse des Griefs</button>
+        <button class="tab-btn" onclick="switchTab('vigilance')">Points de Vigilance &amp; Sources</button>
+    </nav>
+
+    <div id="tab-carto" class="tab-content active">
+        <div class="dashboard-layout">
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+                    <div class="filter-options" id="cat-filters-container">
+                        </div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Positionnement</h3>
+                    <div class="filter-options" id="stance-filters-container">
+                        </div>
+                </div>
+            </aside>
+
+            <main class="actors-grid" id="actors-grid">
+                </main>
+        </div>
+    </div>
+
+    <div id="tab-griefs" class="tab-content">
+        <div class="griefs-container" id="griefs-grid">
+            </div>
+    </div>
+
+    <div id="tab-vigilance" class="tab-content">
+        <div class="list-card">
+            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <ul id="vigilance-list">
+                </ul>
+        </div>
+
+        <div class="list-card">
+            <h2>📰 Médias et sources d'investigation répertoriés</h2>
+            <ul id="sources-list">
+                </ul>
+        </div>
+    </div>
+
+    <div class="modal" id="actor-modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <div class="modal-field">
+                <label>Nom / Entité</label>
+                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+            </div>
+            <div class="modal-field">
+                <label>Fonction / Rattachement</label>
+                <p id="modal-role"></p>
+            </div>
+            <div class="modal-field">
+                <label>Positionnement ou Argument Principal</label>
+                <p id="modal-position"></p>
+            </div>
+            <div class="modal-field">
+                <label>Verbatim / Preuve documentaire</label>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="modal-field" style="margin:0;">
+                    <label>Orientation</label>
+                    <span id="modal-stance-badge" class="badge"></span>
+                </div>
+                <div class="modal-field" style="margin:0; text-align: right;">
+                    <label>Niveau de certitude</label>
+                    <p id="modal-certainty" class="certitude"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Injection de votre base de données automatisée d'Ozans
+        const projectData = {
+            meta: {
+                title: "Cartographie Interactive — Data center Google — Ozans / Étrechet",
+                subtitle: "Projet de campus de centres de données Google de 195 hectares sur la ZAC d’Ozans, soutenu par l'État et l'agglomération, mais confronté à une contestation locale croissante portant sur l'opacité, l'impact hydrique, énergétique et l'artificialisation des sols."
+            },
+            taxonomy: {
+                categories: {
+                    "all": "Tous les acteurs",
+                    "opposants": "Opposants & Experts",
+                    "elus-opp": "Élus Opposés/Critiques",
+                    "elus-fav": "Élus Favorables/Prudents",
+                    "orgs": "Orgs & Collectifs",
+                    "porteurs": "Porteurs & Économie"
+                },
+                stances: {
+                    "all": "Toutes les positions",
+                    "opposed": "Opposé / Critique",
+                    "favorable": "Favorable / Soutien",
+                    "neutral": "Prudent / Ambigü"
+                }
+            },
+            actors: [
+                { name: "Ozans dire non", category: "orgs", stance: "opposed", role: "Collectif citoyen contre Google", position: "Rassemble citoyens, organisations syndicales, politiques et environnementales face au projet.", evidence: "Constitution formelle du collectif d'opposition citoyenne.", certainty: "Haute" },
+                { name: "PCF de l’Indre", category: "orgs", stance: "opposed", role: "Fédération départementale", position: "Membre du collectif Ozans dire non et très critique sur l’opacité du projet.", evidence: "Dénonciation de l'opacité.", certainty: "Haute" },
+                { name: "Les Écologistes", category: "orgs", stance: "opposed", role: "Organisation politique", position: "À l’origine d’une réunion publique à Châteauroux pour peser dans la concertation préalable.", evidence: "Organisation de réunions publiques de concertation.", certainty: "Haute" },
+                { name: "Confédération paysanne", category: "orgs", stance: "opposed", role: "Syndicat agricole", position: "Alerte sur l’absence de détails concernant les impacts agricoles et environnementaux.", evidence: "Alerte sur le manque de détails agricoles.", certainty: "Moyenne" },
+                { name: "Indre Nature / FNE locale", category: "orgs", stance: "opposed", role: "Association environnementale locale", position: "Citée parmi les acteurs que les garants de la CNDP doivent rencontrer.", evidence: "Consultée au titre d'expert environnemental local.", certainty: "Haute" },
+                { name: "Union de la gauche citoyenne", category: "orgs", stance: "opposed", role: "Formation locale critique", position: "Représentée par Éric Domenge-Abeau à l'échelle municipale.", evidence: "Intégrée à l'opposition municipale.", certainty: "Haute" },
+                { name: "LFI", category: "orgs", stance: "opposed", role: "Mouvement politique national", position: "Mentionnée dans le corpus via des critiques contre Google et son projet de data center à Ozans.", evidence: "Auteur d'une pétition hébergée sur MyPetition.org.", certainty: "Haute" },
+                { name: "Jérémie Godet", category: "elus-opp", stance: "opposed", role: "Vice-président écologiste de la Région Centre-Val de Loire", position: "Porte la fronde avec Ozans dire non, critique l’artificialisation, les PFAS et l’îlot de chaleur.", evidence: "Critiques publiques sur l'artificialisation et les PFAS.", certainty: "Haute" },
+                { name: "Dominique Boué", category: "opposants", stance: "opposed", role: "Secrétaire départemental du PCF de l’Indre", position: "Dénonce l’absence de concertation, l’opacité et les incertitudes sur le refroidissement.", evidence: "Critique explicite du manque de transparence technologique.", certainty: "Moyenne" },
+                { name: "Francis Martinet", category: "opposants", stance: "opposed", role: "Initiateur d'Ozans dire non", position: "Insiste sur l’information des citoyens et la faible transparence autour du projet.", evidence: "Initiateur direct du collectif citoyen.", certainty: "Haute" },
+                { name: "Stéphanie Grelet", category: "opposants", stance: "opposed", role: "Militante communiste", position: "Compare le dossier Google à d’autres projets menés selon elle « en sous-marin ».", evidence: "Accuse le projet d'être mené « en sous-marin ».", certainty: "Faible" },
+                { name: "Raphaël Tillie", category: "opposants", stance: "opposed", role: "Membre du collectif", position: "Interroge l’îlot de chaleur et défend l’enjeu de souveraineté alimentaire.", evidence: "Défense des enjeux de souveraineté alimentaire.", certainty: "Haute" },
+                { name: "Cyrielle Chatelain", category: "elus-opp", stance: "opposed", role: "Députée, Présidente du groupe écologiste", position: "Alerte sur le mirage des créations d’emplois disproportionnées au regard du foncier.", evidence: "Intervention sur les ratios d'emploi limités.", certainty: "Haute" },
+                { name: "Jean Delavergne", category: "opposants", stance: "opposed", role: "Co-secrétaire des Écologistes de l’Indre", position: "Critique la gestion territoriale de Gil Avérous et la fuite en avant technocratique.", evidence: "Cible politiquement la gestion de l'agglomération.", certainty: "Haute" },
+                { name: "Éric Domenge-Abeau", category: "opposants", stance: "opposed", role: "Tête de liste de l’UGC à Châteauroux", position: "Ironise sur la succession d’annonces non abouties autour de la ZAC d'Ozans.", evidence: "Rappel des échecs industriels précédents sur la ZAC.", certainty: "Haute" },
+                { name: "Emmanuel de Saint Pol", category: "opposants", stance: "opposed", role: "Agriculteur exproprié en 2012", position: "Exprime de la lassitude et un scepticisme face aux projets successifs sur la zone.", evidence: "Témoignage direct lié à une expropriation passée.", certainty: "Moyenne" },
+                { name: "Militant écologiste anonyme", category: "opposants", stance: "opposed", role: "Militant de terrain", position: "Évoque la faiblesse du rapport de force local, la difficulté à mobiliser et le manque d’informations d’Enedis/RTE.", evidence: "Alerte sur l'asymétrie d'information.", certainty: "Faible" },
+                { name: "Gil Avérous", category: "elus-fav", stance: "favorable", role: "Président LR de Châteauroux Métropole", position: "Principal soutien local du projet, qu’il présente comme une chance historique pour le territoire.", evidence: "Considère publiquement le projet comme une « chance historique ».", certainty: "Haute" },
+                { name: "François Bonneau", category: "elus-fav", stance: "favorable", role: "Président socialiste de la Région", position: "Voit dans le projet de data center une « super opportunité » pour la région Centre-Val de Loire.", evidence: "Qualifie le projet de « super opportunité ».", certainty: "Haute" },
+                { name: "Marc Descouraux", category: "elus-fav", stance: "neutral", role: "Maire d’Étrechet", position: "Renvoie vers l’agglomération et indique ne pas avoir d’information précise sur l’avancement du projet.", evidence: "Avoue un manque d'informations précises.", certainty: "Faible" },
+                { name: "Vincent Millan", category: "elus-fav", stance: "neutral", role: "Maire d’Argenton-sur-Creuse", position: "Confirme l’existence d’un projet miroir au Pêchereau, encore très préliminaire.", evidence: "Confirme prudemment les études pour le projet miroir.", certainty: "Moyenne" },
+                { name: "Régis Blanchet", category: "elus-fav", stance: "neutral", role: "Maire de Buzançais", position: "Évoque avec prudence l’entreprise américaine, dans un contexte local de discrétion.", evidence: "Exprime une forte prudence due au secret.", certainty: "Moyenne" },
+                { name: "Thibault Lanxade", category: "elus-fav", stance: "favorable", role: "Préfet de l’Indre", position: "Présenté comme soutien d’une stratégie de redynamisation numérique et industrielle via Indre 2030.", evidence: "Soutien institutionnel et étatique de la préfecture.", certainty: "Haute" },
+                { name: "Nicolas Bouzou", category: "porteurs", stance: "favorable", role: "Économiste, fondateur d’Asterès", position: "Missionné pour imaginer le plan Indre 2030, incluant data centers, giga-factories et robotaxis.", evidence: "Intègre les data centers dans son plan stratégique territorial.", certainty: "Haute" },
+                { name: "Chambre d’agriculture", category: "orgs", stance: "favorable", role: "Organisme consulaire agricole", position: "Acteur mobilisé dans les calculs de Gil Avérous sur la valorisation de la chaleur fatale pour les serres.", evidence: "Associée aux études techniques de valorisation de chaleur fatale.", certainty: "Haute" },
+                { name: "Google", category: "porteurs", stance: "favorable", role: "Porteur industriel du projet", position: "Envisage son premier méga data center exploité en propre sur le territoire français.", evidence: "Entreprise commanditaire principale.", certainty: "Haute" },
+                { name: "Google France", category: "porteurs", stance: "favorable", role: "Filiale nationale", position: "Maître d’ouvrage cité dans la saisine CNDP avec Tricolore Computing, Violet Computing et RTE.", evidence: "Identifiée formellement à la CNDP.", certainty: "Haute" },
+                { name: "Tricolore Computing", category: "porteurs", stance: "favorable", role: "Filiale immobilière liée à Google", position: "Mentionnée pour l’acquisition potentielle du terrain et agissant comme maître d’ouvrage.", evidence: "Sert de véhicule d'acquisition foncière.", certainty: "Haute" },
+                { name: "Violet Computing", category: "porteurs", stance: "favorable", role: "Filiale administrative liée à Google", position: "Citée formellement comme co-maître d’ouvrage dans la concertation CNDP.", evidence: "Structure administrative impliquée dans le dossier public.", certainty: "Haute" },
+                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire d'infrastructure réseau", position: "Maître d'ouvrage gérant le raccordement 225 kV puis l'aménagement des futures lignes aériennes 400 kV.", evidence: "Acteur technique d'infrastructure énergétique.", certainty: "Haute" },
+                { name: "Enedis", category: "porteurs", stance: "neutral", role: "Gestionnaire de distribution", position: "Mentionné par un militant écologiste comme acteur sollicité sans obtenir d’informations précises.", evidence: "Refus de communiquer des données précises constaté sur le terrain.", certainty: "Faible" },
+                { name: "Decknet", category: "porteurs", stance: "favorable", role: "Porteur de projet", position: "Opère un autre projet de data center plus modeste à Buzançais.", evidence: "Présence industrielle parallèle dans le département.", certainty: "Haute" },
+                { name: "Soprema Steel", category: "porteurs", stance: "neutral", role: "Industriel local", position: "Voisin direct présent sur la ZAC d’Ozans, constituant l’un des rares bâtiments industriels existants.", evidence: "Voisin direct sur le site visé.", certainty: "Haute" },
+                { name: "CNDP", category: "orgs", stance: "neutral", role: "Autorité de débat public", position: "Lance officiellement la concertation préalable réglementaire sur le projet Ozans-Châteauroux.", evidence: "Saisie officiellement pour encadrer le débat public.", certainty: "Haute" },
+                { name: "Marc Papinutti", category: "orgs", stance: "neutral", role: "Président de la CNDP", position: "Explique que la présence de RTE fait entrer le projet dans le périmètre obligatoire de la CNDP.", evidence: "Justifie juridiquement l'intervention de la CNDP.", certainty: "Haute" },
+                { name: "Jean-Louis Laure", category: "orgs", stance: "neutral", role: "Garant de la concertation CNDP", position: "Se dit vigilant face au sentiment d’urgence imposé et au secret des affaires.", evidence: "Alerte sur les risques liés au secret des affaires.", certainty: "Moyenne" },
+                { name: "Dreal", category: "orgs", stance: "neutral", role: "Autorité environnementale", position: "Citée parmi les experts et services instructeurs étatiques que les garants doivent rencontrer.", evidence: "Intégrée au processus de validation réglementaire.", certainty: "Haute" },
+                { name: "Ademe", category: "orgs", stance: "neutral", role: "Agence de la transition écologique", position: "Associée à des travaux macro-économiques sur les data centers et leurs impacts environnementaux.", evidence: "Apporte une expertise technique nationale.", certainty: "Haute" },
+                { name: "État", category: "elus-fav", stance: "favorable", role: "Autorité nationale", position: "Inscrit le site parmi les projets industriels stratégiques clés en main pour soutenir les infrastructures de calcul.", evidence: "Politique nationale de soutien aux infrastructures numériques.", certainty: "Haute" },
+                { name: "Préfecture de l’Indre", category: "elus-fav", stance: "favorable", role: "Représentation de l'État", position: "Acteur local impliqué dans la stratégie Indre 2030 et l'instruction du dossier industriel.", evidence: "Accompagne l'implantation industrielle au niveau local.", certainty: "Haute" },
+                { name: "Ophélie Coelho", category: "opposants", stance: "opposed", role: "Chercheuse associée à l’IRIS", position: "Critique la diplomatie industrielle de terrain, la faiblesse des concertations et l’opacité des Big Tech.", evidence: "Analyse experte de l'opacité des GAFAM.", certainty: "Haute" },
+                { name: "Loup Cellard", category: "opposants", stance: "opposed", role: "Sociologue de l'impact écologique", position: "Interroge techniquement la valorisation réelle de la chaleur fatale pour une commune de la taille de Diors.", evidence: "Remet en cause la faisabilité technique locale.", certainty: "Haute" },
+                { name: "Maxime Colin", category: "opposants", stance: "opposed", role: "Juriste à FNE", position: "Critique la stratégie des GAFAM consistant à laisser les projets s'implanter le plus discrètement possible.", evidence: "Dénonce les pratiques d'implantation furtives.", certainty: "Haute" },
+                { name: "Cécile Diguet", category: "opposants", stance: "opposed", role: "Urbaniste au Studio Dégel", position: "Souligne que la culture sémantique du secret des GAFAM nuit à l’anticipation urbaine locale.", evidence: "Met en évidence l'impact de l'opacité sur l'urbanisme.", certainty: "Haute" },
+                { name: "Guillaume Gourgues", category: "opposants", stance: "opposed", role: "Politiste", position: "Cité sur la faiblesse institutionnelle inhérente aux processus de la CNDP face aux projets industriels.", evidence: "Analyse le manque de poids des processus de concertation.", certainty: "Haute" },
+                { name: "La Quadrature du Net", category: "orgs", stance: "opposed", role: "Association techno-critique", position: "Exprime de vives craintes sur les assouplissements législatifs successifs favorables aux entrepôts de serveurs.", evidence: "S'oppose aux assouplissements législatifs.", certainty: "Haute" },
+                { name: "Le Nuage était sous nos pieds", category: "orgs", stance: "opposed", role: "Collectif critique des infrastructures", position: "Cité sur l’intérêt social limité du projet et le caractère souvent sous-traité des emplois créés.", evidence: "Remise en cause des retombées en matière d'emploi.", certainty: "Haute" },
+                { name: "Hiatus", category: "orgs", stance: "opposed", role: "Collectif national", position: "Cité comme référence doctrinale dans le débat national sur la régulation des centres de serveurs.", evidence: "Participe au réseau national d'opposition technocritique.", certainty: "Haute" },
+                { name: "Lou Welgryn", category: "opposants", stance: "opposed", role: "Coprésidente de Data for Good", position: "Déplore la fuite en avant et le gigantisme matériel des projets rattachés aux géants américains.", evidence: "S'oppose au gigantisme structurel.", certainty: "Haute" },
+                { name: "Data for Good", category: "orgs", stance: "opposed", role: "Association nationale", position: "Plaidant activement pour un cadre numérique d'intérêt général au niveau macro-économique.", evidence: "Revendique une vision d'intérêt général face aux acteurs privés.", certainty: "Haute" },
+                { name: "Philippe Chabeaudy", category: "opposants", stance: "opposed", role: "Contestataire projet Cézanne", position: "S'oppose au projet Telehouse aux Pennes-Mirabeau en raison des risques structurels d'incendie.", evidence: "Opposition locale fondée sur le risque incendie.", certainty: "Haute" },
+                { name: "Maxime Efoui-Hess", category: "opposants", stance: "opposed", role: "Expert au Shift Project", position: "Critique la priorisation de la ressource et de la puissance électrique nationale pour l'IA.", evidence: "Conteste les arbitrages énergétiques nationaux.", certainty: "Haute" },
+                { name: "Associations de Wissous", category: "orgs", stance: "opposed", role: "Collectifs juridiques d'Essonne", position: "Mènent la lutte en justice pour dénoncer le saucissonnage et les projets furtifs.", evidence: "Expérience juridique des recours contre le saucissonnage.", certainty: "Haute" },
+                { name: "PS de l’Indre", category: "orgs", stance: "opposed", role: "Parti politique départemental", position: "Redoute de voir le département transformé en une colonie numérique dépendante et pointe la faiblesse des retombées locales.", evidence: "Peur d'une « colonie numérique ».", certainty: "Haute" },
+                { name: "Gouvernement français", category: "elus-fav", stance: "favorable", role: "Pouvoir exécutif national", position: "Soutient les investissements massifs dans l'IA et accélère l'implantation des giga infrastructures.", evidence: "Pilotage macro-économique en faveur du secteur.", certainty: "Haute" },
+                { name: "Maryvonne Le Brignonen", category: "elus-fav", stance: "neutral", role: "Préfète de l'Indre", position: "Destinataire institutionnelle désignée de la pétition des opposants au projet Google.", evidence: "Réceptionnaire officiel des requêtes citoyennes.", certainty: "Haute" },
+                { name: "France Datacenter", category: "porteurs", stance: "favorable", role: "Association professionnelle du secteur", position: "Lobby officiel représentant les intérêts de la filière et défendant les vertus économiques des infrastructures.", evidence: "Lobby sectoriel officiel.", certainty: "Haute" },
+                { name: "Michaël Reffay", category: "porteurs", stance: "favorable", role: "Délégué général, France Datacenter", position: "Défend l'intérêt économique et l'intégration territoriale moderne des projets.", evidence: "Porte-parole économique de l'industrie.", certainty: "Haute" },
+                { name: "EDF", category: "porteurs", stance: "favorable", role: "Fournisseur d'énergie historique", position: "Identifié comme ayant un besoin commercial direct de ces projets lourds pour valoriser sa production décarbonée.", evidence: "Intérêt industriel et commercial direct.", certainty: "Haute" },
+                { name: "Telehouse", category: "porteurs", stance: "favorable", role: "Opérateur japonais", position: "Porteur du projet Cézanne contesté aux Pennes-Mirabeau pour son emprise thermique.", evidence: "Développe des projets similaires soumis à critique.", certainty: "Haute" },
+                { name: "Marie-Claire Eustache", category: "orgs", stance: "neutral", role: "Garante de la CNDP", position: "Désignée officiellement pour encadrer le processus de concertation préalable à Ozans.", evidence: "Nomination officielle.", certainty: "Haute" },
+                { name: "Romane Harmel-Samarcq", category: "orgs", stance: "neutral", role: "Garante de la CNDP", position: "Désignée officiellement pour superviser la concertation préalable à Ozans.", evidence: "Nomination officielle.", certainty: "Haute" },
+                { name: "Sébastien Missoffe", category: "porteurs", stance: "favorable", role: "Directeur général de Google France", position: "Confirme que l'entreprise étudie activement toutes les options techniques viables pour le site de Châteauroux.", evidence: "Déclarations à la presse sur la viabilité locale.", certainty: "Haute" }
+            ],
+            griefs: [], // Géré en dur dans l'HTML de l'onglet 2 pour des raisons de densité
+            vigilance: [
+                "<strong>Culture du Secret et Opacité :</strong> Les élus des petites communes, les militants et la CNDP soulignent l'extrême discrétion de Google (agissant via Tricolore/Violet Computing), générant un fort sentiment de développement 'en sous-marin' (rétention d'informations d'Enedis/RTE).",
+                "<strong>Incertitudes Écologiques (PFAS, Eau, Chaleur) :</strong> Le flou technique maintenu sur les systèmes de refroidissement suscite de sérieuses craintes concernant la gestion des fluides frigorifiques, le risque de stress hydrique et la formation d'îlots de chaleur massifs.",
+                "<strong>Saucissonnage et Stratégie Foncière :</strong> L'apparition d'un 'projet miroir' au Pêchereau et la multiplication de filiales-écrans font craindre un contournement progressif de l'évaluation environnementale globale.",
+                "<strong>Décalage Promesses / Réalité :</strong> La rhétorique locale évoquant une 'chance historique' (Gil Avérous) se heurte aux doutes des sociologues et experts pointant le mirage de l'emploi et l'incompatibilité de la valorisation de la chaleur pour de si petites communes."
+            ],
+            sources: [
+                "<strong>La Nouvelle République :</strong> Source locale centrale sur le projet Google, la concertation, le collectif Ozans dire non et les réactions politiques.",
+                "<strong>Basta! :</strong> Média ayant publié l’enquête « Google avance masqué » et analysé l’opacité territoriale du projet.",
+                "<strong>France 3 Centre-Val de Loire :</strong> Média ayant traité la division locale autour du premier data center Google en France.",
+                "<strong>Le Monde :</strong> Cité sur la confidentialité des informations écologiques des centres de données obtenue par les lobbys du secteur.",
+                "<strong>ICI Berry :</strong> Média cité au sujet du plan Indre 2030 et des positions de Thibault Lanxade.",
+                "<strong>MyPetition.org :</strong> Plateforme en ligne hébergeant la pétition de La France Insoumise.",
+                "<strong>news.google.com :</strong> Agrégateur d'actualités ayant relayé le sujet.",
+                "<strong>Ouest-France :</strong> Média national ayant interviewé la direction de Google France."
+            ]
+        };
+
+        // États de filtrage croisés
+        let activeCategory = 'all';
+        let activeStance = 'all';
+
+        // Initialisation de la page
+        document.addEventListener("DOMContentLoaded", () => {
+            // Configuration des titres depuis les méta-données
+            document.getElementById('header-title').innerText = projectData.meta.title;
+            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+
+            // Rendu complet
+            renderFilters();
+            renderGrid();
+            renderGriefsHTML();
+            renderLists();
+        });
+
+        // Commutation des onglets
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Rendu dynamique des options de filtrage et effectifs associés
+        function renderFilters() {
+            const catContainer = document.getElementById('cat-filters-container');
+            const stanceContainer = document.getElementById('stance-filters-container');
+            
+            catContainer.innerHTML = '';
+            stanceContainer.innerHTML = '';
+
+            // 1. Catégories d'acteurs
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
+                const activeClass = key === activeCategory ? 'active' : '';
+                catContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
+                        <span>${label}</span> <span class="count">${count}</span>
+                    </button>
+                `;
+            });
+
+            // 2. Positionnements (Stances)
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const activeClass = key === activeStance ? 'active' : '';
+                stanceContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+                        <span>${label}</span>
+                    </button>
+                `;
+            });
+        }
+
+        function setCategoryFilter(category, el) {
+            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeCategory = category;
+            renderGrid();
+        }
+
+        function setStanceFilter(stance, el) {
+            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeStance = stance;
+            renderGrid();
+        }
+
+        // Rendu dynamique de la grille filtrée des acteurs
+        function renderGrid() {
+            const grid = document.getElementById('actors-grid');
+            grid.innerHTML = '';
+
+            const filteredActors = projectData.actors.filter(actor => {
+                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
+                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
+                return matchCategory && matchStance;
+            });
+
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                return;
+            }
+
+            filteredActors.forEach(actor => {
+                const card = document.createElement('div');
+                card.className = `actor-card ${actor.stance}`;
+                card.onclick = () => openActorModal(actor);
+
+                card.innerHTML = `
+                    <div class="actor-header">
+                        <div class="actor-name">${actor.name}</div>
+                        <div class="actor-role">${actor.role}</div>
+                    </div>
+                    <div class="actor-body">${actor.position}</div>
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
+                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Hydratation de l'onglet 2 (Griefs)
+        function renderGriefsHTML() {
+            const container = document.getElementById('griefs-grid');
+            container.innerHTML = '';
+            
+            // Base de griefs consolidée issue du corpus d'Ozans
+            const explicitGriefs = [
+                { title: "🔒 Opacité / secret des affaires", text: "Grief central : manque criant d’informations techniques, culture de la confidentialité propre à Google et communication jugée parcellaire par les garants de la CNDP." },
+                { title: "🌿 Artificialisation des sols", text: "Forte critique environnementale portant sur les 195 hectares prévus pour le campus de la ZAC d’Ozans, induisant une imperméabilisation massive." },
+                { title: "🌡️ Îlot de chaleur urbain", text: "Crainte d’un impact thermique direct et continu à proximité immédiate de la forêt de Châteauroux et des terres agricoles arables environnantes." },
+                { title: "☣️ PFAS & Refroidissement", text: "Inquiétude aiguë sur les fluides frigorifiques requis pour les architectures de refroidissement par air et les risques afférents de fuites." },
+                { title: "💧 Consommation d’eau", text: "Point d'achoppement sémantique et stratégique majeur dans un département déjà soumis à des épisodes récurrents de stress hydrique." },
+                { title: "⚡ Surcharge électrique", text: "Besoin structurel d'aménager de nouvelles liaisons électriques 225 kV puis 400 kV ; la capacité locale actuelle est jugée saturée par les experts." },
+                { title: "💼 Mirage de l’emploi local", text: "Dénonciation par les économistes et élus du faible ratio d'emplois nets durables créés au regard du foncier et des ressources mobilisés." },
+                { title: "🔒 Souveraineté et Cloud Act", text: "Contestation radicale de l'argument d'indépendance numérique, l'infrastructure étant sous la coupe d'une firme assujettie au droit extraterritorial américain." },
+                { title: "📑 Risque de saucissonnage", text: "Soupçon de morcellement administratif délibéré (via des entités miroirs comme au Pêchereau ou Wissous) visant à contourner l'évaluation globale." },
+                { title: "🔥 Risque d'incendie accru", text: "Inquiétudes modélisées à partir d'autres luttes nationales (projet Cézanne) portant sur les charges thermiques lourdes à proximité d'espaces arborés." }
+            ];
+
+            explicitGriefs.forEach(g => {
+                container.innerHTML += `
+                    <div class="grief-card">
+                        <h2>${g.title}</h2>
+                        <p>${g.text}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Hydratation de l'onglet 3 (Listes)
+        function renderLists() {
+            const vigList = document.getElementById('vigilance-list');
+            const srcList = document.getElementById('sources-list');
+
+            vigList.innerHTML = '';
+            srcList.innerHTML = '';
+
+            projectData.vigilance.forEach(item => vigilance-list.innerHTML += `<li>${item}</li>`);
+            projectData.sources.forEach(item => sources-list.innerHTML += `<li>${item}</li>`);
+        }
+
+        // Gestion de la modale d'affichage du détail complet
+        function openActorModal(actor) {
+            document.getElementById('modal-name').innerText = actor.name;
+            document.getElementById('modal-role').innerText = actor.role;
+            document.getElementById('modal-position').innerText = actor.position;
+            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucune preuve littérale isolée dans le corpus.";
+            document.getElementById('modal-certainty').innerText = actor.certainty;
+
+            const badge = document.getElementById('modal-stance-badge');
+            badge.className = `badge ${actor.stance}`;
+            badge.innerText = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('actor-modal');
+            modal.classList.toggle('active', show);
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'actor-modal') {
+                toggleModal(false);
+            }
+        }
+    </script>
+</body>
+</html>
