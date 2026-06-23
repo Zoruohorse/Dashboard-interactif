@@ -727,17 +727,18 @@
             });
         }
 
-        // Hydratation de l'onglet 3 (Listes)
-        function renderLists() {
-            const vigList = document.getElementById('vigilance-list');
-            const srcList = document.getElementById('sources-list');
+       // Hydratation de l'onglet 3 (Listes)
+function renderLists() {
+    const vigList = document.getElementById('vigilance-list');
+    const srcList = document.getElementById('sources-list');
 
-            vigList.innerHTML = '';
-            srcList.innerHTML = '';
+    vigList.innerHTML = '';
+    srcList.innerHTML = '';
 
-            projectData.vigilance.forEach(item => vigilance-list.innerHTML += `<li>${item}</li>`);
-            projectData.sources.forEach(item => sources-list.innerHTML += `<li>${item}</li>`);
-        }
+    // On utilise bien 'vigList' et 'srcList' ici, et non les ID avec tirets
+    projectData.vigilance.forEach(item => vigList.innerHTML += `<li>${item}</li>`);
+    projectData.sources.forEach(item => srcList.innerHTML += `<li>${item}</li>`);
+}
 
         // Gestion de la modale d'affichage du détail complet
         function openActorModal(actor) {
