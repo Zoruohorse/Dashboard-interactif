@@ -564,16 +564,17 @@
         let activeCategory = 'all';
         let activeStance = 'all';
 
-        // Initialisation globale
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('proj-title', 'header-title').innerText = projectData.meta.title;
-            document.getElementById('proj-subtitle', 'header-subtitle').innerText = projectData.meta.subtitle;
+       // Initialisation globale
+document.addEventListener("DOMContentLoaded", () => {
+    // Correction : on utilise uniquement l'ID exact présent dans le HTML
+    document.getElementById('header-title').innerText = projectData.meta.title;
+    document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
 
-            renderFilters();
-            renderGrid();
-            renderGriefs();
-            renderLists();
-        });
+    renderFilters();
+    renderGrid();
+    renderGriefs();
+    renderLists();
+});
 
         // Gestion de la commutation d'onglets
         function switchTab(tabName) {
