@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie Interactive — Celtic Interconnector</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --color-opposed: #ef4444;
+            --color-opposed-light: #fee2e2;
+            --color-favorable: #22c55e;
+            --color-favorable-light: #dcfce7;
+            --color-neutral: #f59e0b;
+            --color-neutral-light: #fef3c7;
+            
+            --primary: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Menu Onglets */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interface Cartographie */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Filtres */
+        .filters-sidebar {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn .count {
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .filter-btn.active .count {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grille des Cartes Acteurs */
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actor-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .actor-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .actor-body {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .actor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.025em;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modal Détails Acteur */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            position: relative;
+            animation: modalAnim 0.2s ease-out;
+        }
+
+        @keyframes modalAnim {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-field {
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-field p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-verbatim {
+            background-color: var(--bg-primary);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        /* Styles Onglet Griefs */
+        .griefs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .griefs-container { grid-template-columns: 1fr; }
+        }
+
+        .grief-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .grief-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Listes & Sources */
+        .list-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .list-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .list-card ul {
+            padding-left: 1.5rem;
+        }
+
+        .list-card li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">Chargement...</h1>
+        <p id="header-subtitle"></p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('carto', this)">Cartographie des Acteurs</button>
+        <button class="tab-btn" onclick="switchTab('griefs', this)">Synthèse des Griefs</button>
+        <button class="tab-btn" onclick="switchTab('vigilance', this)">Points de Vigilance &amp; Sources</button>
+    </nav>
+
+    <div id="tab-carto" class="tab-content active">
+        <div class="dashboard-layout">
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+                    <div class="filter-options" id="cat-filters-container"></div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Positionnement</h3>
+                    <div class="filter-options" id="stance-filters-container"></div>
+                </div>
+            </aside>
+
+            <main class="actors-grid" id="actors-grid"></main>
+        </div>
+    </div>
+
+    <div id="tab-griefs" class="tab-content">
+        <div class="griefs-container" id="griefs-grid"></div>
+    </div>
+
+    <div id="tab-vigilance" class="tab-content">
+        <div class="list-card">
+            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <ul id="vigilance-list"></ul>
+        </div>
+
+        <div class="list-card">
+            <h2>📰 Médias et sources d'investigation répertoriés</h2>
+            <ul id="sources-list"></ul>
+        </div>
+    </div>
+
+    <div class="modal" id="actor-modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <div class="modal-field">
+                <label>Nom / Entité</label>
+                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+            </div>
+            <div class="modal-field">
+                <label>Fonction / Rattachement</label>
+                <p id="modal-role"></p>
+            </div>
+            <div class="modal-field">
+                <label>Positionnement ou Argument Principal</label>
+                <p id="modal-position"></p>
+            </div>
+            <div class="modal-field">
+                <label>Verbatim / Preuve documentaire</label>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="modal-field" style="margin:0;">
+                    <label>Orientation</label>
+                    <span id="modal-stance-badge" class="badge"></span>
+                </div>
+                <div class="modal-field" style="margin:0; text-align: right;">
+                    <label>Niveau de certitude</label>
+                    <p id="modal-certainty" class="certitude"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Objet de données unifié embarqué
+        const projectData = {
+            meta: {
+                title: "Cartographie Interactive — Celtic Interconnector",
+                subtitle: "Projet d’interconnexion électrique sous-marine entre la France et l'Irlande. Un chantier européen stratégique mais freiné par des défis maritimes, générant d'importantes interrogations sur le dérapage budgétaire, les retards calendaires et l'impact sur les consommateurs."
+            },
+            taxonomy: {
+                categories: {
+                    "all": "Tous les acteurs",
+                    "opposants": "Opposants & Experts",
+                    "elus-opp": "Élus Opposés/Critiques",
+                    "elus-fav": "Élus Favorables/Prudents",
+                    "orgs": "Orgs & Collectifs",
+                    "porteurs": "Porteurs & Économie"
+                },
+                stances: {
+                    "all": "Toutes les positions",
+                    "opposed": "Opposé / Critique",
+                    "favorable": "Favorable / Soutien",
+                    "neutral": "Prudent / Ambigü"
+                }
+            },
+            actors: [
+                { name: "Malcolm Byrne", category: "elus-opp", stance: "opposed", role: "Fianna Fáil TD pour Wexford/Wicklow", position: "Critique / inquiet sur le manque de clarté du calendrier et l’impact possible sur les objectifs offshore.", evidence: "Il se dit « stunned » de ne pas obtenir de date d’achèvement et estime que le gouvernement doit être « realistic ».", certainty: "Haute" },
+                { name: "Jennifer Whitmore", category: "elus-opp", stance: "opposed", role: "Social Democrats TD", position: "Inquiète / interrogative sur le retard et ses conséquences.", evidence: "Elle rappelle que l’interconnexion est nécessaire pour « export electricity, but also in the event that we need to import it ».", certainty: "Haute" },
+                { name: "Roderic O’Gorman", category: "elus-fav", stance: "neutral", role: "Green Party TD for Dublin West", position: "Acteur parlementaire demandeur d’information ; position non explicitement opposée.", evidence: "Il reçoit une mise à jour du ministre Darragh O’Brien sur le projet.", certainty: "Moyenne" },
+                { name: "Micheál Martin", category: "elus-fav", stance: "neutral", role: "Taoiseach", position: "Prudent / informé de difficultés techniques impactant le projet.", evidence: "Il indique avoir été informé par EirGrid et l’ambassade de France de « technical issues » susceptibles de retarder le projet.", certainty: "Haute" },
+                { name: "Darragh O’Brien", category: "elus-fav", stance: "neutral", role: "Energy Minister", position: "Institutionnel / explicatif sur les difficultés structurelles.", evidence: "Il évoque un projet « significant and complex » dans un environnement maritime difficile, rapportant des progrès plus l'ent que attendu.", certainty: "Haute" },
+                { name: "Timmy Dooley", category: "elus-fav", stance: "neutral", role: "Minister of State", position: "Destinataire d’une interpellation, position publique non définie fermement.", evidence: "Malcolm Byrne lui reproche de ne pas savoir quand le connecteur serait opérationnel.", certainty: "Faible" },
+                { name: "Uplift", category: "orgs", stance: "neutral", role: "Mouvement citoyen irlandais", position: "Porte une campagne contre l’expansion des data centers ; non identifié comme opposant frontal au Celtic Interconnector.", evidence: "Le document précise qu’Uplift critique les impacts des data centers sur le système électrique mais pas directement le câble.", certainty: "Haute" },
+                { name: "Don’t let Big Tech steal our light", category: "orgs", stance: "opposed", role: "Campagne citoyenne liée à Uplift", position: "Critique de la consommation électrique des multinationales du numérique ; demande de moratoire sur les data centers.", evidence: "La campagne vise un moratoire sur l’ouverture de sites et critique la pression sur le système électrique.", certainty: "Haute" },
+                { name: "SECAD Partnership CLG", category: "orgs", stance: "favorable", role: "Administrateur / accompagnateur de fonds", position: "Gestion et accompagnement du Celtic Interconnector Community Benefit Fund.", evidence: "Contact d’aide pour les candidatures au fonds communautaire.", certainty: "Haute" },
+                { name: "Community groups / not-for-profit organisations in east Cork", category: "orgs", stance: "favorable", role: "Acteurs locaux bénéficiaires", position: "Bénéficiaires du Community Benefit Fund.", evidence: "29 groupes et organisations reçoivent 838 987 € dans le cadre du fonds associé au projet.", certainty: "Haute" },
+                { name: "EirGrid", category: "porteurs", stance: "favorable", role: "Gestionnaire public irlandais du réseau électrique", position: "Co-porteur du projet ; responsable côté irlandais ; finance 65 % du coût final.", evidence: "Confirme les retards liés à la fabrication et aux conditions marines ; gère les négociations de coûts additionnels.", certainty: "Haute" },
+                { name: "RTE / Réseau de Transport d’Électricité", category: "porteurs", stance: "favorable", role: "Gestionnaire français du réseau de transport d’électricité", position: "Co-porteur côté français.", evidence: "Présente le projet comme une interconnexion stratégique renforçant la sécurité d’approvisionnement et la souveraineté.", certainty: "Haute" },
+                { name: "Régis Boigegrain", category: "porteurs", stance: "favorable", role: "Directeur général (division gestion infrastructures RTE)", position: "Porte-parole institutionnel de RTE.", evidence: "Déclare que le lancement de la phase française constitue une « decisive milestone ».", certainty: "Haute" },
+                { name: "Rémi Courtial", category: "porteurs", stance: "favorable", role: "Directeur du projet Celtic Interconnector pour RTE", position: "Défend le projet comme un acte de solidarité et de souveraineté européenne.", evidence: "Déclare : « Se soutenir entre pays européens reste un acte de souveraineté ».", certainty: "Haute" },
+                { name: "Nexans", category: "porteurs", stance: "favorable", role: "Câblier / Industriel", position: "Responsable de l'ingénierie, fabrication et installation du système complet de câbles.", evidence: "Fabrication répartie entre Halden, Charleroi et Cortaillod.", certainty: "Haute" },
+                { name: "Siemens Energy", category: "porteurs", stance: "favorable", role: "Entreprise industrielle énergie", position: "Responsable de la construction et des équipements de la station de conversion.", evidence: "Intervient sur la station d’Ar Merzher.", certainty: "Haute" },
+                { name: "Alexandre Pinson", category: "porteurs", stance: "favorable", role: "Chef de projet Siemens Energy", position: "Responsable du déploiement de la station de conversion.", evidence: "Fier d’avoir achevé l’infrastructure de la station Air Merzher avec des partenaires locaux.", certainty: "Haute" },
+                { name: "NGE", category: "porteurs", stance: "favorable", role: "Groupe français de BTP", position: "Réalisation de la station de conversion d’Ar Merzher en partenariat avec Siemens.", evidence: "Présente le chantier comme un projet complexe au service de la transition écologique.", certainty: "Haute" },
+                { name: "Stéphane Perez", category: "porteurs", stance: "favorable", role: "Directeur général de NGE", position: "Porte-parole valorisant l'expertise française.", evidence: "Estime que le chantier illustre la capacité de NGE à coordonner des expertises.", certainty: "Haute" },
+                { name: "Eiffage Énergie Systèmes", category: "porteurs", stance: "favorable", role: "Entreprise énergie / réseaux", position: "Opère les travaux de liaison terrestre côté français pour Nexans et RTE.", evidence: "Pose de câbles HVDC, tranchées, fourreaux.", certainty: "Haute" },
+                { name: "Hervé Burel", category: "porteurs", stance: "favorable", role: "Chef de projet Eiffage Énergie Systèmes", position: "Responsable des travaux de réseau.", evidence: "Décrit les 21 premiers kilomètres construits par ses équipes.", certainty: "Haute" },
+                { name: "Vincent Morice", category: "porteurs", stance: "favorable", role: "Chef de projet EES", position: "Responsable de la pose des câbles.", evidence: "Décrit la pose par tronçons de modules.", certainty: "Haute" },
+                { name: "DLE Ouest", category: "porteurs", stance: "favorable", role: "Entreprise de travaux publics", position: "Réalisation d’un tronçon critique de liaison souterraine.", evidence: "Construit la seconde section de la liaison souterraine jusqu’à la station de conversion.", certainty: "Haute" },
+                { name: "Eiffage Génie Civil / Eiffage Fondations", category: "porteurs", stance: "favorable", role: "Entreprises de génie civil", position: "Responsables des microtunnels et des infrastructures lourdes.", evidence: "Forage sous la LGV Paris-Brest et sous l’Élorn.", certainty: "Haute" },
+                { name: "Van Oord", category: "porteurs", stance: "neutral", role: "Entreprise de travaux maritimes", position: "Opérateur des campagnes de câbles en pleine mer pour Nexans.", evidence: "Réalise des opérations de câbles dans la mer Celtique.", certainty: "Haute" },
+                { name: "CIDAC / Celtic Interconnector Designated Activity Company", category: "porteurs", stance: "neutral", role: "Structure porteuse du projet", position: "Maîtrise d'ouvrage / entité légale centrale pour les opérations et les contrats de service.", evidence: "Associée aux opérations de réparation ou câblage.", certainty: "Haute" },
+                { name: "Assystem", category: "porteurs", stance: "favorable", role: "Groupe d’ingénierie", position: "Assistance à maîtrise d’ouvrage.", evidence: "Contrat auprès de CIDAC pour accompagner conception et construction.", certainty: "Haute" },
+                { name: "Commission européenne / Union européenne", category: "orgs", stance: "favorable", role: "Institution européenne", position: "Financeur de référence soutenant le projet.", evidence: "Le projet est reconnu d’intérêt commun avec une subvention majeure accordée.", certainty: "Haute" },
+                { name: "CINEA", category: "orgs", stance: "favorable", role: "Agence exécutive européenne", position: "Apporte un soutien institutionnel et technique.", evidence: "Mentionnée comme agence européenne soutenant activement le projet.", certainty: "Haute" },
+                { name: "Commission for Regulation of Utilities / CRU", category: "orgs", stance: "neutral", role: "Régulateur irlandais de l'énergie", position: "Autorité de régulation veillant à l'impact des coûts sur les charges de réseau.", evidence: "EirGrid devra obtenir son autorisation pour intégrer de nouvelles charges financières.", certainty: "Haute" },
+                { name: "Alan McSweeney", category: "opposants", stance: "opposed", role: "Consultant spécialisé en coûts de projet", position: "Analyste financier très critique sur l'explosion prévisible du budget.", evidence: "Estime que le coût final pourrait atteindre 2,1 à 2,8 Md€.", certainty: "Haute" },
+                { name: "Barry Hayes", category: "opposants", stance: "opposed", role: "Professeur associé en systèmes électriques (UCC)", position: "Juge le retard extrêmement défavorable aux consommateurs, bien qu'il reconnaisse l'utilité du câble.", evidence: "Déclare : « This is bad news for electricity consumers ».", certainty: "Haute" },
+                { name: "Paul Cuffe", category: "opposants", stance: "opposed", role: "Professeur associé (UCD)", position: "Expert énergie très contrarié par la dérive du calendrier.", evidence: "Qualifie le retard de « frustrating ».", certainty: "Haute" },
+                { name: "Paul Leahy", category: "opposants", stance: "opposed", role: "Maître de conférences (UCC)", position: "Expert éolien, inquiet du risque de déséquilibre entre offre et demande électrique.", evidence: "Alerte sur le resserrement du réseau notamment à cause de la croissance des data centers.", certainty: "Haute" }
+            ],
+            griefs: [
+                { title: "⏱️ Retard du projet", text: "Point de vigilance structurant. La mise en service initiale est repoussée vers fin 2028 / Q4 2028, avec un fort risque de nouveau décalage lié aux conditions météorologiques et maritimes." },
+                { title: "💶 Dérapage des coûts", text: "Point de vigilance structurant. Une explosion budgétaire est anticipée : le projet passerait d’environ 1,62 Md€ à plus de 2 Md€, voire jusqu'à 2,8 Md€ selon l'analyste Alan McSweeney." },
+                { title: "季度 Impact pour les consommateurs", text: "Point de vigilance structurant. Les surcoûts colossaux risquent d'être directement intégrés aux charges de réseau par la CRU, impactant lourdement la facture des usagers finaux irlandais." },
+                { title: "⚡ Sécurité d’approvisionnement", text: "Point de vigilance structurant. La fragilité structurelle du réseau irlandais, très dépendant au gaz importé, rend les retards de l'interconnexion particulièrement critiques." },
+                { title: "📈 Croissance de la demande", text: "Point de vigilance structurant. La demande électrique irlandaise explose, portée de façon disproportionnée par la prolifération incontrôlée des méga data centers." },
+                { title: "⚖️ Gouvernance bretonne", text: "Point de vigilance territorial. Certains passages documentaires estiment que la Bretagne accueille et subit une lourde infrastructure décidée selon des logiques européennes et parisiennes sans réel contrôle démocratique local." },
+                { title: "🌐 Arbitrages de marché", text: "Point de vigilance économique. Les experts craignent que les flux d’électricité suivent uniquement les zones les plus rentables du marché spot européen, privant les territoires d'accueil de bénéfices locaux réels." },
+                { title: "⚓ Contraintes environnementales", text: "Point de vigilance technique. Le fond marin hostile nécessite des techniques complexes (ensouillage, protection lourde des câbles) tout en affrontant la problématique de l'emprise sur les zones humides." }
+            ],
+            vigilance: [
+                "<strong>Brouillard Financier :</strong> Des contradictions majeures subsistent dans les rapports sur le montant réel de la subvention européenne (variant de 530 à 800 M€ selon les sources), témoignant d'une communication financière instable.",
+                "<strong>Explosion Budgétaire (EirGrid) :</strong> Les analyses indépendantes (A. McSweeney) évaluent la dérive financière du projet à potentiellement +1 Md€, ce qui pèsera mécaniquement sur la CRU et les usagers irlandais.",
+                "<strong>Boucle des Data Centers :</strong> La nécessité de l'interconnexion (côté irlandais) est paradoxalement renforcée par la demande boulimique du secteur des data centers, dont les collectifs (Uplift) dénoncent violemment l'impact.",
+                "<strong>Facteur Maritime Imprévisible :</strong> Le calendrier repose sur la viabilité des opérations complexes en Mer Celtique par Van Oord et Nexans ; or, la rudesse des fonds marins a déjà provoqué de lourds retards juste au démarrage, motivant le report à fin 2028."
+            ],
+            sources: [
+                "<strong>news.google.com :</strong> Agrégateur / reprise de presse. Source de nombreuses reprises d’articles du corpus.",
+                "<strong>The Irish Times :</strong> Presse irlandaise. Article sur les coûts directs et structurels possibles liés aux retards.",
+                "<strong>Irish Examiner :</strong> Presse irlandaise. Articles sur les retards, l’absence de clarté, les impacts prix et la sécurité énergétique.",
+                "<strong>Offshore Energy :</strong> Média spécialisé énergie offshore. Articles sur les étapes techniques : tirage, station, pose de câbles.",
+                "<strong>La Tribune :</strong> Média économique français. Article sur l’ensouillage côté français et l’avancement du chantier terrestre.",
+                "<strong>TF1 Info :</strong> Média national français. Reportage grand public sur le chantier de pose en mer et l’intérêt énergétique pour la Bretagne.",
+                "<strong>Breizh-info.com :</strong> Média régional / politique breton. Article sur la station de conversion et la souveraineté énergétique européenne.",
+                "<strong>Voiries et Réseaux :</strong> Média professionnel travaux / infrastructures. Article sur la station de conversion de La Martyre et le rôle de NGE.",
+                "<strong>Silicon Republic :</strong> Média tech / innovation irlandais. Article sur l’étape franchie dans le projet et la station Ar Merzher.",
+                "<strong>Afloat.ie :</strong> Média maritime irlandais. Notices maritimes sur les opérations de câbles, réparations, sécurité maritime.",
+                "<strong>Mer et Marine :</strong> Média maritime français. Articles sur les navires câbliers et campagnes d’études en mer.",
+                "<strong>Révolution Énergétique :</strong> Média énergie. Article sur le début de pose côté français et le coût du projet.",
+                "<strong>ABP / Agence Bretagne Presse :</strong> Média breton. Article de 2019 sur la concertation et commentaires de lecteurs.",
+                "<strong>Capital.fr :</strong> Média économique. Mention du contrat Assystem / CIDAC.",
+                "<strong>Cork Chamber / EirGrid communication :</strong> Source institutionnelle / économique locale. Relais des financements communautaires accordés en East Cork."
+            ]
+        };
+
+        let activeCategory = 'all';
+        let activeStance = 'all';
+
+        // Lancement au chargement du DOM
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('header-title').innerText = projectData.meta.title;
+            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+        });
+
+        // Gestion saine du menu Onglets (this transmis explicitement pour éviter le blocage Firefox)
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Rendu dynamique de la barre latérale et calcul automatisé des effectifs (sans croisement destructif)
+        function renderFilters() {
+            const catContainer = document.getElementById('cat-filters-container');
+            const stanceContainer = document.getElementById('stance-filters-container');
+            
+            catContainer.innerHTML = '';
+            stanceContainer.innerHTML = '';
+
+            // 1. Catégories d'acteurs
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
+                const activeClass = key === activeCategory ? 'active' : '';
+                catContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
+                        <span>${label}</span> <span class="count">${count}</span>
+                    </button>
+                `;
+            });
+
+            // 2. Positionnements (Stances)
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const activeClass = key === activeStance ? 'active' : '';
+                stanceContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+                        <span>${label}</span>
+                    </button>
+                `;
+            });
+        }
+
+        function setCategoryFilter(category, el) {
+            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeCategory = category;
+            renderGrid();
+        }
+
+        function setStanceFilter(stance, el) {
+            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeStance = stance;
+            renderGrid();
+        }
+
+        // Rendu dynamique des fiches acteurs filtrées
+        function renderGrid() {
+            const grid = document.getElementById('actors-grid');
+            grid.innerHTML = '';
+
+            const filteredActors = projectData.actors.filter(actor => {
+                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
+                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
+                return matchCategory && matchStance;
+            });
+
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                return;
+            }
+
+            filteredActors.forEach(actor => {
+                const card = document.createElement('div');
+                card.className = `actor-card ${actor.stance}`;
+                card.onclick = () => openActorModal(actor);
+
+                card.innerHTML = `
+                    <div class="actor-header">
+                        <div class="actor-name">${actor.name}</div>
+                        <div class="actor-role">${actor.role}</div>
+                    </div>
+                    <div class="actor-body">${actor.position}</div>
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
+                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Rendu dynamique de l'onglet 2 (Griefs)
+        function renderGriefs() {
+            const container = document.getElementById('griefs-grid');
+            container.innerHTML = '';
+
+            projectData.griefs.forEach(g => {
+                container.innerHTML += `
+                    <div class="grief-card">
+                        <h2>${g.title}</h2>
+                        <p>${g.text}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Rendu sécurisé des listes analytiques (Résolution définitive du bug d'évaluation des traits d'union)
+        function renderLists() {
+            const vigList = document.getElementById('vigilance-list');
+            const srcList = document.getElementById('sources-list');
+
+            vigList.innerHTML = '';
+            srcList.innerHTML = '';
+
+            projectData.vigilance.forEach(item => {
+                vigList.innerHTML += `<li>${item}</li>`;
+            });
+            projectData.sources.forEach(item => {
+                srcList.innerHTML += `<li>${item}</li>`;
+            });
+        }
+
+        // Hydratation et ouverture saine de la fenêtre modale
+        function openActorModal(actor) {
+            document.getElementById('modal-name').innerText = actor.name;
+            document.getElementById('modal-role').innerText = actor.role;
+            document.getElementById('modal-position').innerText = actor.position;
+            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById('modal-certainty').innerText = actor.certainty;
+
+            const badge = document.getElementById('modal-stance-badge');
+            badge.className = `badge ${actor.stance}`;
+            badge.innerText = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('actor-modal');
+            modal.classList.toggle('active', show);
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'actor-modal') {
+                toggleModal(false);
+            }
+        }
+    </script>
+</body>
+</html>
