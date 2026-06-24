@@ -1,328 +1,789 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<title>Cartographie interactive — Projet MRS6 (Bouc-Bel-Air)</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-  :root {
-    --bg:#f8fafc; --panel:#ffffff; --text:#0f172a; --muted:#64748b; --border:#e2e8f0;
-  }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Arial, sans-serif; background:var(--bg); color:var(--text); }
-  header { padding:18px 22px 12px; background:linear-gradient(90deg,#0f172a,#1e1b4b); color:white; }
-  header h1 { margin:0; font-size:22px; letter-spacing:-.02em; }
-  header p { margin:6px 0 0; color:#cbd5e1; font-size:13px; }
-  #wrap { display:grid; grid-template-columns: 320px 1fr 350px; min-height: calc(100vh - 74px); }
-  aside, #details { background:var(--panel); border-right:1px solid var(--border); padding:16px; overflow:auto; }
-  #details { border-right:0; border-left:1px solid var(--border); }
-  #chart { position:relative; overflow:hidden; }
-  svg { width:100%; height:100%; display:block; cursor:grab; background:
-      radial-gradient(circle at 30% 25%, rgba(37,99,235,.08), transparent 28%),
-      radial-gradient(circle at 70% 60%, rgba(220,38,38,.08), transparent 32%),
-      #f8fafc;
-  }
-  .controls label { display:flex; align-items:center; gap:8px; margin:9px 0; font-size:13px; }
-  .controls input[type="text"] { width:100%; padding:10px 11px; border:1px solid var(--border); border-radius:10px; font-size:13px; }
-  .btnrow { display:flex; gap:8px; margin:12px 0 8px; }
-  button { border:1px solid var(--border); background:#fff; border-radius:10px; padding:8px 10px; cursor:pointer; font-size:12px; }
-  button:hover { background:#f1f5f9; }
-  .legend-dot { width:11px; height:11px; border-radius:50%; display:inline-block; flex:0 0 auto; }
-  .hint { color:var(--muted); font-size:12px; line-height:1.35; padding:10px; border:1px dashed var(--border); border-radius:10px; margin-bottom:14px; background:#f8fafc; }
-  .node circle { stroke:#fff; stroke-width:2px; filter: drop-shadow(0 2px 5px rgba(15,23,42,.18)); }
-  .node text { font-size:11px; font-weight:650; paint-order:stroke; stroke:#fff; stroke-width:4px; stroke-linejoin:round; fill:#0f172a; pointer-events:none; text-anchor:middle; }
-  .link { stroke:#94a3b8; stroke-opacity:.42; stroke-width:1.2; }
-  .node.dim, .link.dim { opacity:.12; }
-  .node.hidden, .link.hidden { display:none; }
-  .selected circle { stroke:#0f172a; stroke-width:3.2px; }
-  #details h2 { margin:0 0 8px; font-size:20px; }
-  .pill { display:inline-block; border-radius:999px; color:white; padding:5px 9px; font-size:12px; font-weight:700; margin-bottom:12px; }
-  #details p { font-size:14px; line-height:1.45; }
-  .mini { color:var(--muted); font-size:12px; margin-top:18px; }
-  .count { color:var(--muted); font-size:12px; margin:10px 0 0; }
-  .tooltip { position:absolute; pointer-events:none; background:#0f172a; color:white; padding:7px 9px; border-radius:8px; font-size:12px; opacity:0; transform:translate(-50%,-120%); white-space:nowrap; z-index: 10; }
-</style>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie Interactive — Projet MRS6 (Bouc-Bel-Air)</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --color-opposed: #ef4444;
+            --color-opposed-light: #fee2e2;
+            --color-favorable: #22c55e;
+            --color-favorable-light: #dcfce7;
+            --color-neutral: #f59e0b;
+            --color-neutral-light: #fef3c7;
+            
+            --primary: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --transition: all 0.2s ease-in-out;
+        }
 
-<script src="data-bouc-bel-air.js"></script>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Menu Onglets */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interface Cartographie */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Filtres */
+        .filters-sidebar {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn .count {
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .filter-btn.active .count {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grille des Cartes Acteurs */
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actor-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .actor-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .actor-body {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .actor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.025em;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modal Détails Acteur */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            position: relative;
+            animation: modalAnim 0.2s ease-out;
+        }
+
+        @keyframes modalAnim {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-field {
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-field p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-verbatim {
+            background-color: var(--bg-primary);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        /* Styles Onglet Griefs */
+        .griefs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .griefs-container { grid-template-columns: 1fr; }
+        }
+
+        .grief-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .grief-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Listes & Sources */
+        .list-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .list-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .list-card ul {
+            padding-left: 1.5rem;
+        }
+
+        .list-card li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
 </head>
 <body>
-<header>
-  <h1>Cartographie interactive — Projet MRS6 (Bouc-Bel-Air)</h1>
-  <p>Nuage relationnel des acteurs : Porteurs de projets, élus, collectifs et riverains face à l'implantation du data center.</p>
-</header>
-<div id="wrap">
-  <aside>
-    <div class="hint">
-      Utilisation : chercher un acteur, cocher/décocher des familles, cliquer sur un nœud pour voir le détail. Les nœuds sont déplaçables ; molette = zoom.
+
+    <header>
+        <h1 id="header-title">Chargement...</h1>
+        <p id="header-subtitle"></p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('carto', this)">Cartographie des Acteurs</button>
+        <button class="tab-btn" onclick="switchTab('griefs', this)">Synthèse des Griefs</button>
+        <button class="tab-btn" onclick="switchTab('vigilance', this)">Points de Vigilance &amp; Sources</button>
+    </nav>
+
+    <div id="tab-carto" class="tab-content active">
+        <div class="dashboard-layout">
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+                    <div class="filter-options" id="cat-filters-container"></div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Positionnement</h3>
+                    <div class="filter-options" id="stance-filters-container"></div>
+                </div>
+            </aside>
+
+            <main class="actors-grid" id="actors-grid"></main>
+        </div>
     </div>
-    <div class="controls">
-      <input id="search" type="text" placeholder="Rechercher un acteur, collectif, élu...">
-      <div class="btnrow">
-        <button id="reset">Réinitialiser</button>
-        <button id="center">Recentrer</button>
-      </div>
-      <strong>Filtres</strong>
-      <div id="checks"></div>
-      <div class="count" id="count"></div>
+
+    <div id="tab-griefs" class="tab-content">
+        <div class="griefs-container" id="griefs-grid"></div>
     </div>
-  </aside>
-  <main id="chart">
-    <div class="tooltip" id="tooltip"></div>
-    <svg id="svg"></svg>
-  </main>
-  <section id="details">
-    <h2>Projet MRS6 (Bouc-Bel-Air)</h2>
-    <span class="pill" style="background:#111827">Projet central</span>
-    <p>Clique sur un acteur pour afficher sa fiche synthétique et ses rattachements.</p>
-    <p class="mini">Lecture rapide : plus le nœud est gros, plus l’acteur est structurant dans le corpus fourni.</p>
-  </section>
-</div>
 
-<script>
-// Connexion à la variable globale chargée depuis data-bouc-bel-air.js
-const graph = graphData;
+    <div id="tab-vigilance" class="tab-content">
+        <div class="list-card">
+            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <ul id="vigilance-list"></ul>
+        </div>
 
-/* CONFIGURATION DES COULEURS ADAPTÉE À LA TAXONOMIE DE BOUC-BEL-AIR */
-const colors = {
-  "Projet central": "#111827",           // Noir ardoise
-  "Porteurs & Économie": "#1e1b4b",      // Bleu nuit très sombre
-  "Élus Favorables/Prudents": "#2563eb", // Bleu vif
-  "Élus Opposés/Critiques": "#7c3aed",   // Violet
-  "Orgs & Collectifs": "#16a34a",        // Vert
-  "Opposants & Experts": "#dc2626"       // Rouge
-};
+        <div class="list-card">
+            <h2>📰 Médias et sources d'investigation répertoriés</h2>
+            <ul id="sources-list"></ul>
+        </div>
+    </div>
 
-const groups = [
-  "Projet central", 
-  "Porteurs & Économie", 
-  "Élus Favorables/Prudents", 
-  "Élus Opposés/Critiques", 
-  "Orgs & Collectifs", 
-  "Opposants & Experts"
-];
+    <div class="modal" id="actor-modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <div class="modal-field">
+                <label>Nom / Entité</label>
+                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+            </div>
+            <div class="modal-field">
+                <label>Fonction / Rattachement</label>
+                <p id="modal-role"></p>
+            </div>
+            <div class="modal-field">
+                <label>Positionnement ou Argument Principal</label>
+                <p id="modal-position"></p>
+            </div>
+            <div class="modal-field">
+                <label>Verbatim / Preuve documentaire</label>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="modal-field" style="margin:0;">
+                    <label>Orientation</label>
+                    <span id="modal-stance-badge" class="badge"></span>
+                </div>
+                <div class="modal-field" style="margin:0; text-align: right;">
+                    <label>Niveau de certitude</label>
+                    <p id="modal-certainty" class="certitude"></p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-const svg = document.getElementById('svg');
-const chart = document.getElementById('chart');
-const details = document.getElementById('details');
-const tooltip = document.getElementById('tooltip');
-const checks = document.getElementById('checks');
-const countEl = document.getElementById('count');
-let width = chart.clientWidth, height = chart.clientHeight;
+    <script>
+        // Objet de données unifié embarqué
+        const projectData = {
+            meta: {
+                title: "Cartographie Interactive — Projet MRS6 (Bouc-Bel-Air)",
+                subtitle: "Projet d'implantation d'un data center de 26 000m² porté par Digital Realty, soulevant des oppositions écologiques locales et des enjeux de raccordement énergétique."
+            },
+            taxonomy: {
+                categories: {
+                    "all": "Tous les acteurs",
+                    "opposants": "Opposants & Experts",
+                    "elus-opp": "Élus Opposés/Critiques",
+                    "elus-fav": "Élus Favorables/Prudents",
+                    "orgs": "Orgs & Collectifs",
+                    "porteurs": "Porteurs & Économie"
+                },
+                stances: {
+                    "all": "Toutes les positions",
+                    "opposed": "Opposé / Critique",
+                    "favorable": "Favorable / Soutien",
+                    "neutral": "Prudent / Ambigü"
+                }
+            },
+            actors: [
+                {
+                    name: "Digital Realty",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Multinationale américaine",
+                    position: "Porteuse du projet avec 700 millions d'euros d'investissement.",
+                    evidence: "Porte le projet de data center MRS6.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Fabrice Coquio",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Directeur France de Digital Realty",
+                    position: "Défend l'éco-conception.",
+                    evidence: "Dirige Digital Realty en France.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Mairie Bouc-Bel-Air",
+                    category: "elus-fav",
+                    stance: "favorable",
+                    role: "Institution locale (Maire: Mathieu Piétri)",
+                    position: "Avis favorable au permis de construire.",
+                    evidence: "Avis favorable sous conditions.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "RTE",
+                    category: "porteurs",
+                    stance: "neutral",
+                    role: "Gestionnaire du réseau de transport d'électricité",
+                    position: "En charge du raccordement THT et alerte sur les conflits d'usage.",
+                    evidence: "Raccorde électriquement l'infrastructure.",
+                    certainty: "Moyenne"
+                },
+                {
+                    name: "Le Nuage était sous nos pieds",
+                    category: "orgs",
+                    stance: "opposed",
+                    role: "Association",
+                    position: "Milite pour la matérialisation des infrastructures et un moratoire.",
+                    evidence: "S'oppose (Moratoire).",
+                    certainty: "Haute"
+                },
+                {
+                    name: "FNE13",
+                    category: "orgs",
+                    stance: "opposed",
+                    role: "Fédération environnementale",
+                    position: "S'oppose aux ogres énergétiques et réclame un observatoire.",
+                    evidence: "S'oppose au projet MRS6.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Bouc-Bel-Air Environnement (BBAE)",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Association locale",
+                    position: "Favorable avec réserves, en conflit avec la ligne FNE13.",
+                    evidence: "Avis favorable avec réserves, critique la posture radicale de FNE13.",
+                    certainty: "Moyenne"
+                },
+                {
+                    name: "Hervé Plisson",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Riverain opposant",
+                    position: "Tête de liste Bouc-Bel-Air pour tous.",
+                    evidence: "S'oppose (Nuisances locales).",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Stéphane Coppey",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Porte-parole",
+                    position: "Représente la FNE13.",
+                    evidence: "Porte-parole de FNE13.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Antoine Devillet",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Porte-parole",
+                    position: "Représente le collectif Le Nuage était sous nos pieds.",
+                    evidence: "Porte-parole du collectif Le Nuage était sous nos pieds.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Sébastien Barles",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Élu métropolitain",
+                    position: "Opposé au projet de data center.",
+                    evidence: "S'oppose politiquement.",
+                    certainty: "Haute"
+                }
+            ],
+            griefs: [],
+            vigilance: [
+                "<strong>Conflits d'usage électrique :</strong> RTE signale des risques liés à l'alimentation THT du site.",
+                "<strong>Fracture associative :</strong> Une divergence d'approche est observée entre BBAE (favorable avec réserves) et FNE13 (opposition radicale)."
+            ],
+            sources: []
+        };
 
-svg.innerHTML = '';
-svg.setAttribute('viewBox', [0,0,width,height].join(' '));
+        let activeCategory = 'all';
+        let activeStance = 'all';
 
-const ns = "http://www.w3.org/2000/svg";
-const g = document.createElementNS(ns,'g');
-svg.appendChild(g);
-const linkG = document.createElementNS(ns,'g');
-const nodeG = document.createElementNS(ns,'g');
-g.appendChild(linkG); g.appendChild(nodeG);
+        // Lancement au chargement du DOM
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('header-title').innerText = projectData.meta.title;
+            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
 
-const activeGroups = new Set(groups);
-groups.forEach(gr => {
-  const label = document.createElement('label');
-  label.innerHTML = `<input type="checkbox" checked value="${gr}"><span class="legend-dot" style="background:${colors[gr]}"></span><span>${gr}</span>`;
-  checks.appendChild(label);
-});
-checks.addEventListener('change', e => {
-  if(e.target.type === 'checkbox') {
-    e.target.checked ? activeGroups.add(e.target.value) : activeGroups.delete(e.target.value);
-    applyFilters();
-  }
-});
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+        });
 
-const nodes = graph.nodes.map(d => Object.assign({}, d));
-const nodeById = new Map(nodes.map(d => [d.id,d]));
-const links = graph.links.map(d => Object.assign({}, d, {source: nodeById.get(d.source), target: nodeById.get(d.target)})).filter(d => d.source && d.target);
+        // Gestion saine du menu Onglets (this transmis explicitement pour éviter le blocage Firefox)
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
 
-const linkEls = links.map(l => {
-  const line = document.createElementNS(ns,'line');
-  line.classList.add('link');
-  line.dataset.source = l.source.id; line.dataset.target = l.target.id;
-  linkG.appendChild(line);
-  return line;
-});
+        // Rendu dynamique de la barre latérale et calcul automatisé des effectifs (sans croisement destructif)
+        function renderFilters() {
+            const catContainer = document.getElementById('cat-filters-container');
+            const stanceContainer = document.getElementById('stance-filters-container');
+            
+            catContainer.innerHTML = '';
+            stanceContainer.innerHTML = '';
 
-const nodeEls = nodes.map(n => {
-  const el = document.createElementNS(ns,'g');
-  el.classList.add('node');
-  el.dataset.id = n.id; el.dataset.group = n.group;
-  const c = document.createElementNS(ns,'circle');
-  c.setAttribute('r', n.size);
-  c.setAttribute('fill', colors[n.group] || '#999');
-  const t = document.createElementNS(ns,'text');
-  t.setAttribute('dy', n.size + 13);
-  const parts = n.label.split('\n');
-  parts.forEach((part,i) => {
-    const tsp = document.createElementNS(ns,'tspan');
-    tsp.textContent = part;
-    tsp.setAttribute('x', 0);
-    tsp.setAttribute('dy', i===0 ? 0 : 12);
-    t.appendChild(tsp);
-  });
-  el.appendChild(c); el.appendChild(t); nodeG.appendChild(el);
-  el.addEventListener('click', () => selectNode(n));
-  el.addEventListener('mouseenter', ev => showTip(n, ev));
-  el.addEventListener('mousemove', ev => showTip(n, ev));
-  el.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
-  drag(el,n);
-  return el;
-});
+            // 1. Catégories d'acteurs
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
+                const activeClass = key === activeCategory ? 'active' : '';
+                catContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
+                        <span>${label}</span> <span class="count">${count}</span>
+                    </button>
+                `;
+            });
 
-function initialPosition() {
-  const ring = {
-    "Projet central": 0,
-    "Porteurs & Économie": 140,
-    "Élus Favorables/Prudents": 180,
-    "Élus Opposés/Critiques": 220,
-    "Orgs & Collectifs": 240,
-    "Opposants & Experts": 280
-  };
-  const byGroup = {};
-  nodes.forEach(n => (byGroup[n.group] ||= []).push(n));
-  nodes.forEach(n => {
-    if(n.group === "Projet central") { n.x = width/2; n.y = height/2; return; }
-    const arr = byGroup[n.group], idx = arr.indexOf(n), total = arr.length;
-    let base = Object.keys(byGroup).indexOf(n.group) * 0.8;
-    const angle = base + idx * (Math.PI*2/Math.max(total,1));
-    const r = ring[n.group] || 250;
-    n.x = width/2 + Math.cos(angle)*r;
-    n.y = height/2 + Math.sin(angle)*r;
-  });
-}
-initialPosition();
+            // 2. Positionnements (Stances)
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const activeClass = key === activeStance ? 'active' : '';
+                stanceContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+                        <span>${label}</span>
+                    </button>
+                `;
+            });
+        }
 
-function tick() {
-  for(let k=0;k<2;k++) {
-    links.forEach(l => {
-      const dx = l.target.x-l.source.x, dy = l.target.y-l.source.y;
-      const dist = Math.hypot(dx,dy) || 1;
-      const desired = l.source.id==="Projet MRS6" || l.target.id==="Projet MRS6" ? 150 : 100;
-      const f = (dist-desired)*0.012;
-      const fx = dx/dist*f, fy = dy/dist*f;
-      if(!l.source.fixed) { l.source.x += fx; l.source.y += fy; }
-      if(!l.target.fixed) { l.target.x -= fx; l.target.y -= fy; }
-    });
-    for(let i=0;i<nodes.length;i++) for(let j=i+1;j<nodes.length;j++) {
-      const a=nodes[i], b=nodes[j], dx=b.x-a.x, dy=b.y-a.y, dist=Math.hypot(dx,dy)||1;
-      const min = a.size + b.size + 40;
-      if(dist < min) {
-        const f=(min-dist)/dist*0.03;
-        if(!a.fixed) { a.x -= dx*f; a.y -= dy*f; }
-        if(!b.fixed) { b.x += dx*f; b.y += dy*f; }
-      }
-    }
-    nodes.forEach(n => {
-      if(n.group !== "Projet central" && !n.fixed) {
-        n.x += (width/2 - n.x)*0.0015;
-        n.y += (height/2 - n.y)*0.0015;
-      }
-      n.x = Math.max(40, Math.min(width-40, n.x));
-      n.y = Math.max(40, Math.min(height-40, n.y));
-    });
-  }
-  linkEls.forEach((el,i) => {
-    const l=links[i];
-    el.setAttribute('x1',l.source.x); el.setAttribute('y1',l.source.y);
-    el.setAttribute('x2',l.target.x); el.setAttribute('y2',l.target.y);
-  });
-  nodeEls.forEach((el,i) => el.setAttribute('transform',`translate(${nodes[i].x},${nodes[i].y})`));
-  requestAnimationFrame(tick);
-}
-tick();
+        function setCategoryFilter(category, el) {
+            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeCategory = category;
+            renderGrid();
+        }
 
-function selectNode(n) {
-  nodeEls.forEach(el => el.classList.remove('selected','dim'));
-  linkEls.forEach(el => el.classList.remove('dim'));
-  const neigh = new Set([n.id]);
-  links.forEach(l => {
-    if(l.source.id===n.id) neigh.add(l.target.id);
-    if(l.target.id===n.id) neigh.add(l.source.id);
-  });
-  nodeEls.forEach(el => { if(!neigh.has(el.dataset.id)) el.classList.add('dim'); if(el.dataset.id===n.id) el.classList.add('selected'); });
-  linkEls.forEach((el,i) => { const l=links[i]; if(l.source.id!==n.id && l.target.id!==n.id) el.classList.add('dim'); });
-  details.innerHTML = `<h2>${escapeHtml(n.label.replace('\\n', ' '))}</h2>
-    <span class="pill" style="background:${colors[n.group]}">${escapeHtml(n.group)}</span>
-    <p>${escapeHtml(n.detail)}</p>
-    <p class="mini"><strong>Connexions visibles :</strong> ${[...neigh].filter(x=>x!==n.id).map(escapeHtml).join(', ') || 'aucune'}</p>`;
-}
+        function setStanceFilter(stance, el) {
+            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeStance = stance;
+            renderGrid();
+        }
 
-function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+        // Rendu dynamique des fiches acteurs filtrées
+        function renderGrid() {
+            const grid = document.getElementById('actors-grid');
+            grid.innerHTML = '';
 
-function showTip(n, ev) {
-  tooltip.textContent = n.id + " — " + n.group;
-  tooltip.style.opacity = 1;
-  const rect = chart.getBoundingClientRect();
-  tooltip.style.left = (ev.clientX - rect.left) + 'px';
-  tooltip.style.top = (ev.clientY - rect.top) + 'px';
-}
+            const filteredActors = projectData.actors.filter(actor => {
+                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
+                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
+                return matchCategory && matchStance;
+            });
 
-function applyFilters() {
-  const q = document.getElementById('search').value.trim().toLowerCase();
-  let visible = 0;
-  nodeEls.forEach((el,i) => {
-    const n = nodes[i];
-    const okGroup = activeGroups.has(n.group);
-    const okSearch = !q || (n.id + " " + n.group + " " + n.detail).toLowerCase().includes(q);
-    const ok = okGroup && okSearch;
-    el.classList.toggle('hidden', !ok);
-    if(ok) visible++;
-  });
-  linkEls.forEach((el,i) => {
-    const l = links[i];
-    const sEl = nodeEls[nodes.indexOf(l.source)], tEl = nodeEls[nodes.indexOf(l.target)];
-    el.classList.toggle('hidden', sEl.classList.contains('hidden') || tEl.classList.contains('hidden'));
-  });
-  countEl.textContent = visible + " nœuds affichés sur " + nodes.length;
-}
-document.getElementById('search').addEventListener('input', applyFilters);
-applyFilters();
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                return;
+            }
 
-document.getElementById('reset').onclick = () => {
-  document.getElementById('search').value = "";
-  document.querySelectorAll('#checks input').forEach(cb => { cb.checked=true; activeGroups.add(cb.value); });
-  nodeEls.forEach(el => el.classList.remove('selected','dim','hidden'));
-  linkEls.forEach(el => el.classList.remove('dim','hidden'));
-  details.innerHTML = `<h2>Projet MRS6 (Bouc-Bel-Air)</h2><span class="pill" style="background:#111827">Projet central</span><p>Clique sur un acteur pour afficher sa fiche synthétique et ses rattachements.</p>`;
-  applyFilters();
-};
-document.getElementById('center').onclick = () => { currentZoom = 1; panX = 0; panY = 0; updateTransform(); };
+            filteredActors.forEach(actor => {
+                const card = document.createElement('div');
+                card.className = `actor-card ${actor.stance}`;
+                card.onclick = () => openActorModal(actor);
 
-function drag(el,n) {
-  let down=false, ox=0, oy=0;
-  el.addEventListener('pointerdown', ev => {
-    down=true; n.fixed=true; el.setPointerCapture(ev.pointerId);
-    const pt = toSvg(ev); ox = n.x-pt.x; oy=n.y-pt.y;
-  });
-  el.addEventListener('pointermove', ev => {
-    if(!down) return;
-    const pt=toSvg(ev); n.x=pt.x+ox; n.y=pt.y+oy;
-  });
-  el.addEventListener('pointerup', ev => { down=false; el.releasePointerCapture(ev.pointerId); });
-}
+                card.innerHTML = `
+                    <div class="actor-header">
+                        <div class="actor-name">${actor.name}</div>
+                        <div class="actor-role">${actor.role}</div>
+                    </div>
+                    <div class="actor-body">${actor.position}</div>
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
+                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
 
-let currentZoom=1, panX=0, panY=0, panning=false, sx=0, sy=0;
-function updateTransform() { g.setAttribute('transform', `translate(${panX},${panY}) scale(${currentZoom})`); }
-function toSvg(ev) {
-  const rect = svg.getBoundingClientRect();
-  return {x:(ev.clientX-rect.left-panX)/currentZoom, y:(ev.clientY-rect.top-panY)/currentZoom};
-}
-svg.addEventListener('wheel', ev => {
-  ev.preventDefault();
-  const scale = ev.deltaY < 0 ? 1.08 : 0.92;
-  currentZoom = Math.max(.25, Math.min(2.8, currentZoom*scale));
-  updateTransform();
-}, {passive:false});
-svg.addEventListener('pointerdown', ev => { if(ev.target===svg) { panning=true; sx=ev.clientX-panX; sy=ev.clientY-panY; svg.style.cursor='grabbing'; } });
-svg.addEventListener('pointermove', ev => { if(panning) { panX=ev.clientX-sx; panY=ev.clientY-sy; updateTransform(); } });
-svg.addEventListener('pointerup', () => { panning=false; svg.style.cursor='grab'; });
+        // Rendu dynamique de l'onglet 2 (Griefs)
+        function renderGriefs() {
+            const container = document.getElementById('griefs-grid');
+            container.innerHTML = '';
+            
+            if (projectData.griefs.length === 0) {
+                container.innerHTML = `<p style="grid-column: 1/-1; color: var(--text-muted);">Aucun grief formellement identifié dans cette extraction.</p>`;
+                return;
+            }
 
-window.addEventListener('resize', () => {
-  width = chart.clientWidth; height = chart.clientHeight;
-  svg.setAttribute('viewBox', [0,0,width,height].join(' '));
-});
-</script>
+            projectData.griefs.forEach(g => {
+                container.innerHTML += `
+                    <div class="grief-card">
+                        <h2>${g.title}</h2>
+                        <p>${g.text}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Rendu sécurisé des listes analytiques
+        function renderLists() {
+            const vigList = document.getElementById('vigilance-list');
+            const srcList = document.getElementById('sources-list');
+
+            vigList.innerHTML = '';
+            srcList.innerHTML = '';
+            
+            if (projectData.vigilance.length === 0) {
+                vigList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucun point de vigilance identifié.</li>`;
+            } else {
+                projectData.vigilance.forEach(item => {
+                    vigList.innerHTML += `<li>${item}</li>`;
+                });
+            }
+
+            if (projectData.sources.length === 0) {
+                srcList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucune source identifiée.</li>`;
+            } else {
+                projectData.sources.forEach(item => {
+                    srcList.innerHTML += `<li>${item}</li>`;
+                });
+            }
+        }
+
+        // Hydratation et ouverture saine de la fenêtre modale
+        function openActorModal(actor) {
+            document.getElementById('modal-name').innerText = actor.name;
+            document.getElementById('modal-role').innerText = actor.role;
+            document.getElementById('modal-position').innerText = actor.position;
+            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById('modal-certainty').innerText = actor.certainty;
+
+            const badge = document.getElementById('modal-stance-badge');
+            badge.className = `badge ${actor.stance}`;
+            badge.innerText = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('actor-modal');
+            modal.classList.toggle('active', show);
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'actor-modal') {
+                toggleModal(false);
+            }
+        }
+    </script>
 </body>
 </html>
