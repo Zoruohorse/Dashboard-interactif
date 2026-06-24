@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cartographie interactive — Projet Data Center MRS6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+:root { --bg: #f8fafc; --panel: #ffffff; --text: #0f172a; --muted: #64748b; --border: #e2e8f0; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
+header { padding: 18px 22px 13px; background: linear-gradient(90deg, #0f172a, #334155); color: #fff; }
+header h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+header p { margin: 6px 0 0; color: #cbd5e1; font-size: 13px; }
+#wrap { display: grid; grid-template-columns: 320px 1fr 360px; min-height: calc(100vh - 76px); }
+aside, #details { background: var(--panel); border-right: 1px solid var(--border); padding: 16px; overflow: auto; }
+#details { border-right: 0; border-left: 1px solid var(--border); }
+#chart { position: relative; overflow: hidden; min-height: 760px; }
+svg { 
+  width: 100%; height: 100%; display: block; cursor: grab; 
+  background: radial-gradient(circle at 30% 25%, rgba(37,99,235,.08), transparent 28%),
+              radial-gradient(circle at 70% 60%, rgba(22,163,74,.08), transparent 32%), #f8fafc; 
+}
+.controls input[type="text"] { width: 100%; padding: 10px 11px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; }
+.controls label { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 12px; cursor: pointer; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+button { border: 1px solid var(--border); background: #fff; border-radius: 10px; padding: 8px 10px; cursor: pointer; font-size: 12px; }
+button:hover { background: #f1f5f9; }
+.legend-dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+.hint { color: var(--muted); font-size: 12px; line-height: 1.35; padding: 10px; border: 1px dashed var(--border); border-radius: 10px; margin-bottom: 14px; background: #f8fafc; }
+.node circle { stroke: #fff; stroke-width: 2px; filter: drop-shadow(0 2px 5px rgba(15,23,42,.18)); }
+.node text { font-size: 10.5px; font-weight: 700; paint-order: stroke; stroke: #fff; stroke-width: 4px; stroke-linejoin: round; fill: #0f172a; pointer-events: none; text-anchor: middle; }
+.link { stroke: #94a3b8; stroke-opacity: .35; stroke-width: 1.15; }
+.node.dim, .link.dim { opacity: .12; }
+.node.hidden, .link.hidden { display: none; }
+.selected circle { stroke: #0f172a; stroke-width: 3.4px; }
+#details h2 { margin: 0 0 8px; font-size: 20px; }
+.pill { display: inline-block; border-radius: 999px; color: white; padding: 5px 9px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
+#details p { font-size: 14px; line-height: 1.45; }
+.mini { color: var(--muted); font-size: 12px; margin-top: 18px; }
+.count { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+.tooltip { position: absolute; pointer-events: none; background: #0f172a; color: white; padding: 7px 9px; border-radius: 8px; font-size: 12px; opacity: 0; transform: translate(-50%,-120%); white-space: nowrap; z-index: 5; transition: opacity 0.15s; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+</style>
+
+<script src="data-bouc-bel-air.js"></script>
+
+</head>
+<body>
+<header>
+  <h1>Cartographie interactive des acteurs — Data Center MRS6 (Bouc-Bel-Air)</h1>
+  <p>Nuage relationnel des porteurs de projet, élus, opposants et riverains.</p>
+</header>
+
+<div id="wrap">
+  <aside>
+    <div class="hint">Rechercher un acteur, filtrer les collèges ou déplacer les nœuds. Molette pour zoomer.</div>
+    <div class="controls">
+      <input id="search" type="text" placeholder="Rechercher une entité ou un acteur...">
+      <div class="btnrow">
+        <button id="reset">Réinitialiser</button>
+        <button id="center">Recentrer</button>
+      </div>
+      <strong>Filtres par collège</strong>
+      <div id="checks"></div>
+      <div class="count" id="count"></div>
+    </div>
+  </aside>
+
+  <main id="chart">
+    <div class="tooltip" id="tooltip"></div>
+    <svg id="svg"></svg>
+  </main>
+
+  <section id="details">
+    <div id="default-panel">
+      <h2>Vue d'ensemble</h2>
+      <span class="pill" style="background:#0f172a">Corpus</span>
+      <p>Sélectionnez un acteur sur la cartographie pour afficher son positionnement, ses arguments principaux et ses relations directes.</p>
+      <p class="mini">Lecture : la taille du point reflète le poids ou la centralité de l'acteur dans la dynamique locale.</p>
+    </div>
+  </section>
+</div>
+
+<script>
+// Pointage direct sur les clés new_nodes et new_links du fichier fourni
+const nodesData = (typeof graphData !== 'undefined' && graphData.new_nodes) ? graphData.new_nodes : [];
+const linksData = (typeof graphData !== 'undefined' && graphData.new_links) ? graphData.new_links : [];
+
+const colors = {
+  "Projet central": "#111827",
+  "Porteurs / institutions du projet": "#0369a1",
+  "Porte-parole / entreprises associées": "#7c3aed",
+  "Élus / acteurs institutionnels": "#2563eb",
+  "Noyau d’opposition local": "#b91c1c",
+  "Organisations agricoles / foncières": "#65a30d",
+  "Opposants / critiques nommément cités": "#ea580c"
+};
+
+const groups = [...new Set(nodesData.map(n => n.group))];
+
+const svg = document.getElementById('svg');
+const chart = document.getElementById('chart');
+const details = document.getElementById('details');
+const tooltip = document.getElementById('tooltip');
+const checks = document.getElementById('checks');
+const countEl = document.getElementById('count');
+
+let width = Math.max(900, chart.clientWidth);
+let height = Math.max(760, chart.clientHeight);
+svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+const ns = "http://www.w3.org/2000/svg";
+const g = document.createElementNS(ns,'g');
+const linkG = document.createElementNS(ns,'g');
+const nodeG = document.createElementNS(ns,'g');
+svg.appendChild(g); g.appendChild(linkG); g.appendChild(nodeG);
+
+const activeGroups = new Set(groups);
+groups.forEach(gr => {
+  const label = document.createElement('label');
+  label.innerHTML = `<input type="checkbox" checked value="${gr}"><span class="legend-dot" style="background:${colors[gr] || '#64748b'}"></span><span>${gr}</span>`;
+  checks.appendChild(label);
+});
+
+const nodes = nodesData.map(d => Object.assign({}, d));
+const nodeById = new Map(nodes.map(d => [d.id, d]));
+const links = linksData.filter(d => nodeById.has(d.source) && nodeById.has(d.target))
+  .map(d => Object.assign({}, d, {source: nodeById.get(d.source), target: nodeById.get(d.target)}));
+
+const linkEls = links.map(l => {
+  const line = document.createElementNS(ns,'line');
+  line.classList.add('link');
+  linkG.appendChild(line);
+  return line;
+});
+
+const nodeEls = nodes.map(n => {
+  const el = document.createElementNS(ns,'g');
+  el.classList.add('node'); el.dataset.id = n.id; el.dataset.group = n.group;
+  
+  const c = document.createElementNS(ns,'circle');
+  c.setAttribute('r', n.size || 15);
+  c.setAttribute('fill', colors[n.group] || '#64748b');
+
+  const t = document.createElementNS(ns,'text');
+  t.setAttribute('dy', (n.size || 15) + 13);
+  String(n.label || n.id).split('\n').forEach((part,i) => {
+    const tsp = document.createElementNS(ns,'tspan');
+    tsp.textContent = part; tsp.setAttribute('x', 0); tsp.setAttribute('dy', i === 0 ? 0 : 12);
+    t.appendChild(tsp);
+  });
+
+  el.appendChild(c); el.appendChild(t); nodeG.appendChild(el);
+  el.addEventListener('click', () => selectNode(n));
+  el.addEventListener('mouseenter', ev => showTip(n, ev));
+  el.addEventListener('mousemove', ev => showTip(n, ev));
+  el.addEventListener('mouseleave', () => tooltip.style.opacity = 0);
+  drag(el,n);
+  return el;
+});
+
+nodes.forEach(n => { n.x = width/2 + (Math.random()-0.5)*150; n.y = height/2 + (Math.random()-0.5)*150; });
+
+function tick() {
+  for(let k=0; k<2; k++) {
+    links.forEach(l => {
+      const dx = l.target.x-l.source.x, dy = l.target.y-l.source.y;
+      const dist = Math.hypot(dx,dy) || 1;
+      const f = (dist - 130) * 0.012;
+      if(!l.source.fixed) { l.source.x += (dx/dist)*f; l.source.y += (dy/dist)*f; }
+      if(!l.target.fixed) { l.target.x -= (dx/dist)*f; l.target.y -= (dy/dist)*f; }
+    });
+    for(let i=0; i<nodes.length; i++) for(let j=i+1; j<nodes.length; j++) {
+      const a=nodes[i], b=nodes[j], dx=b.x-a.x, dy=b.y-a.y, dist=Math.hypot(dx,dy)||1;
+      const min=(a.size||15)+(b.size||15)+25;
+      if(dist < min) {
+        const f=(min-dist)/dist*0.03;
+        if(!a.fixed) { a.x -= dx*f; a.y -= dy*f; }
+        if(!b.fixed) { b.x += dx*f; b.y += dy*f; }
+      }
+    }
+    nodes.forEach(n => {
+      if(!n.fixed) { n.x += (width/2 - n.x) * 0.002; n.y += (height/2 - n.y) * 0.002; }
+      n.x = Math.max(30, Math.min(width-30, n.x)); n.y = Math.max(30, Math.min(height-30, n.y));
+    });
+  }
+  linkEls.forEach((el,i) => {
+    el.setAttribute('x1',links[i].source.x); el.setAttribute('y1',links[i].source.y);
+    el.setAttribute('x2',links[i].target.x); el.setAttribute('y2',links[i].target.y);
+  });
+  nodeEls.forEach((el,i) => el.setAttribute('transform', `translate(${nodes[i].x},${nodes[i].y})`));
+  requestAnimationFrame(tick);
+}
+tick();
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+function selectNode(n) {
+  nodeEls.forEach(el => el.classList.remove('selected','dim'));
+  linkEls.forEach(el => el.classList.remove('dim'));
+  const neigh = new Set([n.id]); const rels = [];
+  links.forEach(l => {
+    if(l.source.id === n.id) { neigh.add(l.target.id); rels.push(l.target.id + " — " + (l.kind || "relation")); }
+    if(l.target.id === n.id) { neigh.add(l.source.id); rels.push(l.source.id + " — " + (l.kind || "relation")); }
+  });
+  nodeEls.forEach(el => {
+    if(!neigh.has(el.dataset.id)) el.classList.add('dim');
+    if(el.dataset.id === n.id) el.classList.add('selected');
+  });
+  linkEls.forEach((el,i) => { if(links[i].source.id !== n.id && links[i].target.id !== n.id) el.classList.add('dim'); });
+  details.innerHTML = `<h2>${escapeHtml(n.id)}</h2>
+    <span class="pill" style="background:${colors[n.group] || '#64748b'}">${escapeHtml(n.group)}</span>
+    <p>${escapeHtml(n.detail || 'Aucun détail.')}</p><hr>
+    <p class="mini"><strong>Connexions directes :</strong><br>${rels.map(escapeHtml).join('<br>') || 'aucune'}</p>`;
+}
+
+function showTip(n, ev) {
+  tooltip.textContent = n.id; tooltip.style.opacity = 1;
+  const rect = chart.getBoundingClientRect();
+  tooltip.style.left = (ev.clientX - rect.left) + 'px'; tooltip.style.top = (ev.clientY - rect.top) + 'px';
+}
+
+function applyFilters() {
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  let visible = 0;
+  nodeEls.forEach((el,i) => {
+    const n = nodes[i], text = [n.id, n.group, n.detail].join(' ').toLowerCase();
+    const ok = activeGroups.has(n.group) && (!q || text.includes(q));
+    el.classList.toggle('hidden', !ok); if(ok) visible++;
+  });
+  linkEls.forEach((el,i) => {
+    const sEl=nodeEls[nodes.indexOf(links[i].source)], tEl=nodeEls[nodes.indexOf(links[i].target)];
+    el.classList.toggle('hidden', sEl.classList.contains('hidden') || tEl.classList.contains('hidden'));
+  });
+  countEl.textContent = visible + " entités affichées";
+}
+
+checks.addEventListener('change', e => {
+  if(e.target.type === 'checkbox') {
+    e.target.checked ? activeGroups.add(e.target.value) : activeGroups.delete(e.target.value);
+    applyFilters();
+  }
+});
+document.getElementById('search').addEventListener('input', applyFilters);
+document.getElementById('reset').onclick = () => {
+  document.getElementById('search').value = "";
+  document.querySelectorAll('#checks input').forEach(cb => { cb.checked=true; activeGroups.add(cb.value); });
+  nodeEls.forEach(el => el.classList.remove('selected','dim','hidden'));
+  linkEls.forEach(el => el.classList.remove('dim','hidden'));
+  details.innerHTML = document.getElementById('default-panel').outerHTML;
+  applyFilters();
+};
+
+let currentZoom = 1, panX = 0, panY = 0, panning = false, sx = 0, sy = 0;
+function updateTransform() { g.setAttribute('transform', `translate(${panX},${panY}) scale(${currentZoom})`); }
+document.getElementById('center').onclick = () => { currentZoom=1; panX=0; panY=0; updateTransform(); };
+
+function drag(el,n) {
+  let down=false, ox=0, oy=0;
+  const toSvg = ev => { const r = svg.getBoundingClientRect(); return {x:(ev.clientX-r.left-panX)/currentZoom, y:(ev.clientY-r.top-panY)/currentZoom}; };
+  el.addEventListener('pointerdown', ev => { down=true; n.fixed=true; el.setPointerCapture(ev.pointerId); const pt=toSvg(ev); ox=n.x-pt.x; oy=n.y-pt.y; });
+  el.addEventListener('pointermove', ev => { if(down) { const pt=toSvg(ev); n.x=pt.x+ox; n.y=pt.y+oy; } });
+  el.addEventListener('pointerup', ev => { down=false; el.releasePointerCapture(ev.pointerId); });
+  el.addEventListener('dblclick', () => { n.fixed = false; });
+}
+
+svg.addEventListener('wheel', ev => {
+  ev.preventDefault(); currentZoom = Math.max(.35, Math.min(3, currentZoom * (ev.deltaY < 0 ? 1.08 : 0.92))); updateTransform();
+}, {passive:false});
+svg.addEventListener('pointerdown', ev => { if(ev.target === svg) { panning=true; sx=ev.clientX-panX; sy=ev.clientY-panY; svg.style.cursor='grabbing'; } });
+svg.addEventListener('pointermove', ev => { if(panning) { panX=ev.clientX-sx; panY=ev.clientY-sy; updateTransform(); } });
+svg.addEventListener('pointerup', () => { panning=false; svg.style.cursor='grab'; });
+
+window.addEventListener('resize', () => { width = chart.clientWidth; height = chart.clientHeight; svg.setAttribute('viewBox', `0 0 ${width} ${height}`); });
+applyFilters();
+</script>
+</body>
+</html>
