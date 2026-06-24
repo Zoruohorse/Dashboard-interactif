@@ -58,7 +58,6 @@
             font-size: 1.1rem;
         }
 
-        /* Menu Onglets */
         .tabs {
             display: flex;
             gap: 1rem;
@@ -103,7 +102,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Interface Cartographie */
         .dashboard-layout {
             display: grid;
             grid-template-columns: 280px 1fr;
@@ -117,7 +115,6 @@
             }
         }
 
-        /* Sidebar Filtres */
         .filters-sidebar {
             background-color: var(--bg-card);
             padding: 1.5rem;
@@ -180,7 +177,6 @@
             background-color: rgba(255, 255, 255, 0.2);
         }
 
-        /* Grille des Cartes Acteurs */
         .actors-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -274,7 +270,6 @@
             font-style: italic;
         }
 
-        /* Modal Détails Acteur */
         .modal {
             display: none;
             position: fixed;
@@ -347,7 +342,6 @@
             font-style: italic;
         }
 
-        /* Styles Onglet Griefs */
         .griefs-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
@@ -376,7 +370,6 @@
             gap: 0.5rem;
         }
 
-        /* Listes & Sources */
         .list-card {
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
@@ -480,7 +473,6 @@
     </div>
 
     <script>
-        // Objet de données unifié embarqué
         const projectData = {
             meta: {
                 title: "Cartographie Interactive — Projet MRS6 (Bouc-Bel-Air)",
@@ -503,105 +495,17 @@
                 }
             },
             actors: [
-                {
-                    name: "Digital Realty",
-                    category: "porteurs",
-                    stance: "favorable",
-                    role: "Multinationale américaine",
-                    position: "Porteuse du projet avec 700 millions d'euros d'investissement.",
-                    evidence: "Porte le projet de data center MRS6.",
-                    certainty: "Haute"
-                },
-                {
-                    name: "Fabrice Coquio",
-                    category: "porteurs",
-                    stance: "favorable",
-                    role: "Directeur France de Digital Realty",
-                    position: "Défend l'éco-conception.",
-                    evidence: "Dirige Digital Realty en France.",
-                    certainty: "Haute"
-                },
-                {
-                    name: "Mairie Bouc-Bel-Air",
-                    category: "elus-fav",
-                    stance: "favorable",
-                    role: "Institution locale (Maire: Mathieu Piétri)",
-                    position: "Avis favorable au permis de construire.",
-                    evidence: "Avis favorable sous conditions.",
-                    certainty: "Haute"
-                },
-                {
-                    name: "RTE",
-                    category: "porteurs",
-                    stance: "neutral",
-                    role: "Gestionnaire du réseau de transport d'électricité",
-                    position: "En charge du raccordement THT et alerte sur les conflits d'usage.",
-                    evidence: "Raccorde électriquement l'infrastructure.",
-                    certainty: "Moyenne"
-                },
-                {
-                    name: "Le Nuage était sous nos pieds",
-                    category: "orgs",
-                    stance: "opposed",
-                    role: "Association",
-                    position: "Milite pour la matérialisation des infrastructures et un moratoire.",
-                    evidence: "S'oppose (Moratoire).",
-                    certainty: "Haute"
-                },
-                {
-                    name: "FNE13",
-                    category: "orgs",
-                    stance: "opposed",
-                    role: "Fédération environnementale",
-                    position: "S'oppose aux ogres énergétiques et réclame un observatoire.",
-                    evidence: "S'oppose au projet MRS6.",
-                    certainty: "Haute"
-                },
-                {
-                    name: "Bouc-Bel-Air Environnement (BBAE)",
-                    category: "orgs",
-                    stance: "neutral",
-                    role: "Association locale",
-                    position: "Favorable avec réserves, en conflit avec la ligne FNE13.",
-                    evidence: "Avis favorable avec réserves, critique la posture radicale de FNE13.",
-                    certainty: "Moyenne"
-                },
-                {
-                    name: "Hervé Plisson",
-                    category: "opposants",
-                    stance: "opposed",
-                    role: "Riverain opposant",
-                    position: "Tête de liste Bouc-Bel-Air pour tous.",
-                    evidence: "S'oppose (Nuisances locales).",
-                    certainty: "Haute"
-                },
-                {
-                    name: "Stéphane Coppey",
-                    category: "opposants",
-                    stance: "opposed",
-                    role: "Porte-parole",
-                    position: "Représente la FNE13.",
-                    evidence: "Porte-parole de FNE13.",
-                    certainty: "Haute"
-                },
-                {
-                    name: "Antoine Devillet",
-                    category: "opposants",
-                    stance: "opposed",
-                    role: "Porte-parole",
-                    position: "Représente le collectif Le Nuage était sous nos pieds.",
-                    evidence: "Porte-parole du collectif Le Nuage était sous nos pieds.",
-                    certainty: "Haute"
-                },
-                {
-                    name: "Sébastien Barles",
-                    category: "opposants",
-                    stance: "opposed",
-                    role: "Élu métropolitain",
-                    position: "Opposé au projet de data center.",
-                    evidence: "S'oppose politiquement.",
-                    certainty: "Haute"
-                }
+                { name: "Digital Realty", category: "porteurs", stance: "favorable", role: "Multinationale américaine", position: "Porteuse du projet avec 700 millions d'euros d'investissement.", evidence: "Porte le projet de data center MRS6.", certainty: "Haute" },
+                { name: "Fabrice Coquio", category: "porteurs", stance: "favorable", role: "Directeur France de Digital Realty", position: "Défend l'éco-conception.", evidence: "Dirige Digital Realty en France.", certainty: "Haute" },
+                { name: "Mairie Bouc-Bel-Air", category: "elus-fav", stance: "favorable", role: "Institution locale (Maire: Mathieu Piétri)", position: "Avis favorable au permis de construire.", evidence: "Avis favorable sous conditions.", certainty: "Haute" },
+                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire du réseau de transport d'électricité", position: "En charge du raccordement THT et alerte sur les conflits d'usage.", evidence: "Raccorde électriquement l'infrastructure.", certainty: "Moyenne" },
+                { name: "Le Nuage était sous nos pieds", category: "orgs", stance: "opposed", role: "Association", position: "Milite pour la matérialisation des infrastructures et un moratoire.", evidence: "S'oppose (Moratoire).", certainty: "Haute" },
+                { name: "FNE13", category: "orgs", stance: "opposed", role: "Fédération environnementale", position: "S'oppose aux ogres énergétiques et réclame un observatoire.", evidence: "S'oppose au projet MRS6.", certainty: "Haute" },
+                { name: "Bouc-Bel-Air Environnement (BBAE)", category: "orgs", stance: "neutral", role: "Association locale", position: "Favorable avec réserves, en conflit avec la ligne FNE13.", evidence: "Avis favorable avec réserves, critique la posture radicale de FNE13.", certainty: "Moyenne" },
+                { name: "Hervé Plisson", category: "opposants", stance: "opposed", role: "Riverain opposant", position: "Tête de liste Bouc-Bel-Air pour tous.", evidence: "S'oppose (Nuisances locales).", certainty: "Haute" },
+                { name: "Stéphane Coppey", category: "opposants", stance: "opposed", role: "Porte-parole", position: "Représente la FNE13.", evidence: "Porte-parole de FNE13.", certainty: "Haute" },
+                { name: "Antoine Devillet", category: "opposants", stance: "opposed", role: "Porte-parole", position: "Représente le collectif Le Nuage était sous nos pieds.", evidence: "Porte-parole du collectif Le Nuage était sous nos pieds.", certainty: "Haute" },
+                { name: "Sébastien Barles", category: "opposants", stance: "opposed", role: "Élu métropolitain", position: "Opposé au projet de data center.", evidence: "S'oppose politiquement.", certainty: "Haute" }
             ],
             griefs: [],
             vigilance: [
@@ -614,18 +518,15 @@
         let activeCategory = 'all';
         let activeStance = 'all';
 
-        // Lancement au chargement du DOM
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('header-title').innerText = projectData.meta.title;
-            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+        // Initialisation simplifiée et directe
+        document.getElementById('header-title').innerText = projectData.meta.title;
+        document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
 
-            renderFilters();
-            renderGrid();
-            renderGriefs();
-            renderLists();
-        });
+        renderFilters();
+        renderGrid();
+        renderGriefs();
+        renderLists();
 
-        // Gestion saine du menu Onglets (this transmis explicitement pour éviter le blocage Firefox)
         function switchTab(tabName, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
@@ -634,7 +535,6 @@
             document.getElementById(`tab-${tabName}`).classList.add('active');
         }
 
-        // Rendu dynamique de la barre latérale et calcul automatisé des effectifs (sans croisement destructif)
         function renderFilters() {
             const catContainer = document.getElementById('cat-filters-container');
             const stanceContainer = document.getElementById('stance-filters-container');
@@ -642,7 +542,6 @@
             catContainer.innerHTML = '';
             stanceContainer.innerHTML = '';
 
-            // 1. Catégories d'acteurs
             Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
                 const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
                 const activeClass = key === activeCategory ? 'active' : '';
@@ -653,7 +552,6 @@
                 `;
             });
 
-            // 2. Positionnements (Stances)
             Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
                 const activeClass = key === activeStance ? 'active' : '';
                 stanceContainer.innerHTML += `
@@ -678,7 +576,6 @@
             renderGrid();
         }
 
-        // Rendu dynamique des fiches acteurs filtrées
         function renderGrid() {
             const grid = document.getElementById('actors-grid');
             grid.innerHTML = '';
@@ -714,7 +611,6 @@
             });
         }
 
-        // Rendu dynamique de l'onglet 2 (Griefs)
         function renderGriefs() {
             const container = document.getElementById('griefs-grid');
             container.innerHTML = '';
@@ -734,7 +630,6 @@
             });
         }
 
-        // Rendu sécurisé des listes analytiques
         function renderLists() {
             const vigList = document.getElementById('vigilance-list');
             const srcList = document.getElementById('sources-list');
@@ -759,7 +654,6 @@
             }
         }
 
-        // Hydratation et ouverture saine de la fenêtre modale
         function openActorModal(actor) {
             document.getElementById('modal-name').innerText = actor.name;
             document.getElementById('modal-role').innerText = actor.role;
