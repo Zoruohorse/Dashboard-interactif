@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie Interactive — Microsoft Alsace</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --color-opposed: #ef4444;
+            --color-opposed-light: #fee2e2;
+            --color-favorable: #22c55e;
+            --color-favorable-light: #dcfce7;
+            --color-neutral: #f59e0b;
+            --color-neutral-light: #fef3c7;
+            
+            --primary: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Menu Onglets */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interface Cartographie */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Filtres */
+        .filters-sidebar {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn .count {
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .filter-btn.active .count {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grille des Cartes Acteurs */
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actor-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .actor-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .actor-body {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .actor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.025em;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modal Détails Acteur */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            position: relative;
+            animation: modalAnim 0.2s ease-out;
+        }
+
+        @keyframes modalAnim {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-field {
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-field p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-verbatim {
+            background-color: var(--bg-primary);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        /* Styles Onglet Griefs */
+        .griefs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .griefs-container { grid-template-columns: 1fr; }
+        }
+
+        .grief-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .grief-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Listes & Sources */
+        .list-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .list-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .list-card ul {
+            padding-left: 1.5rem;
+        }
+
+        .list-card li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">Chargement...</h1>
+        <p id="header-subtitle"></p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('carto', this)">Cartographie des Acteurs</button>
+        <button class="tab-btn" onclick="switchTab('griefs', this)">Synthèse des Griefs</button>
+        <button class="tab-btn" onclick="switchTab('vigilance', this)">Points de Vigilance &amp; Sources</button>
+    </nav>
+
+    <div id="tab-carto" class="tab-content active">
+        <div class="dashboard-layout">
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+                    <div class="filter-options" id="cat-filters-container"></div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Positionnement</h3>
+                    <div class="filter-options" id="stance-filters-container"></div>
+                </div>
+            </aside>
+
+            <main class="actors-grid" id="actors-grid"></main>
+        </div>
+    </div>
+
+    <div id="tab-griefs" class="tab-content">
+        <div class="griefs-container" id="griefs-grid"></div>
+    </div>
+
+    <div id="tab-vigilance" class="tab-content">
+        <div class="list-card">
+            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <ul id="vigilance-list"></ul>
+        </div>
+
+        <div class="list-card">
+            <h2>📰 Médias et sources d'investigation répertoriés</h2>
+            <ul id="sources-list"></ul>
+        </div>
+    </div>
+
+    <div class="modal" id="actor-modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <div class="modal-field">
+                <label>Nom / Entité</label>
+                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+            </div>
+            <div class="modal-field">
+                <label>Fonction / Rattachement</label>
+                <p id="modal-role"></p>
+            </div>
+            <div class="modal-field">
+                <label>Positionnement ou Argument Principal</label>
+                <p id="modal-position"></p>
+            </div>
+            <div class="modal-field">
+                <label>Verbatim / Preuve documentaire</label>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="modal-field" style="margin:0;">
+                    <label>Orientation</label>
+                    <span id="modal-stance-badge" class="badge"></span>
+                </div>
+                <div class="modal-field" style="margin:0; text-align: right;">
+                    <label>Niveau de certitude</label>
+                    <p id="modal-certainty" class="certitude"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const projectData = {
+            meta: {
+                title: "Cartographie Interactive — Projet Data Center Microsoft — Petit-Landau / Hombourg",
+                subtitle: "Analyse consolidée et structurée des collèges d'acteurs, forces en présence, griefs énergétiques et points de vigilance autour de l'implantation de Microsoft en Alsace."
+            },
+            taxonomy: {
+                categories: {
+                    "all": "Tous les acteurs",
+                    "opposants": "Opposants & Experts",
+                    "elus-opp": "Élus Opposés/Critiques",
+                    "elus-fav": "Élus Favorables/Prudents",
+                    "orgs": "Orgs & Collectifs",
+                    "porteurs": "Porteurs & Économie"
+                },
+                stances: {
+                    "all": "Toutes les positions",
+                    "opposed": "Opposé / Critique",
+                    "favorable": "Favorable / Soutien",
+                    "neutral": "Prudent / Ambigü"
+                }
+            },
+            actors: [
+                { name: "Michel", category: "opposants", stance: "opposed", role: "Habitant de Dietwiller", position: "Opposé à la prédation énergétique et foncière.", evidence: "C'est une prédation de terres agricoles et d'énergie. C'est anti-démocratique, une gabegie énorme !", certainty: "Haute" },
+                { name: "Philippe", category: "opposants", stance: "opposed", role: "Habitant de Hombourg", position: "Critique sur le manque d'outils citoyens.", evidence: "Vous dites que la population doit se manifester. Concrètement, on fait comment ?", certainty: "Haute" },
+                { name: "Cécile Germain-Ecuer", category: "elus-opp", stance: "opposed", role: "Conseillère régionale Grand Est", position: "Opposée, demande la suspension du projet.", evidence: "Je m’interroge sur cette stratégie. (...) comment les habitants sont-ils pris en considération ?", certainty: "Haute" },
+                { name: "Thierry Engasser", category: "elus-opp", stance: "opposed", role: "Maire de Hombourg", position: "Opposé, projet déconnecté du territoire.", evidence: "Microsoft est déconnecté. Ça ne va pas servir l’activité locale, ça ne s’inscrit pas dans la logique du territoire.", certainty: "Haute" },
+                { name: "Léonie Hebert", category: "elus-opp", stance: "opposed", role: "Cheffe de file Mulhouse en commun", position: "Critique vis-à-vis du projet.", evidence: "N/A", certainty: "Moyenne" },
+                { name: "Fabian Jordan", category: "elus-fav", stance: "favorable", role: "Président de M2A", position: "Favorable, garant de l'acceptabilité.", evidence: "Nous sommes les représentants des habitants, pas de Microsoft.", certainty: "Haute" },
+                { name: "Laurent Riche", category: "elus-fav", stance: "favorable", role: "Vice-président de M2A", position: "Favorable, mise sur l'énergie décarbonée.", evidence: "L'énergie consommée par le centre de données sera décarbonée et neutre du point de vue climatique.", certainty: "Haute" },
+                { name: "Carole Talleux", category: "elus-fav", stance: "favorable", role: "Maire de Petit-Landau", position: "Favorable/Prudente, opportunité de diversification.", evidence: "Dans le paysage local, très centré sur la chimie, nous avons toujours eu la volonté d’accueillir quelque chose de différent.", certainty: "Haute" },
+                { name: "Olivier Becht", category: "elus-fav", stance: "favorable", role: "Député", position: "Initiateur politique du projet en Alsace.", evidence: "Je leur dis : “Attendez, arrêtez tout, on va essayier de vous trouver quelque chose en France”.", certainty: "Haute" },
+                { name: "Collectif IA pas moyen", category: "orgs", stance: "opposed", role: "Collectif citoyen", position: "Opposé au data center, demande un moratoire.", evidence: "Notre maison brûle, Microsoft et M2A attisent le feu !", certainty: "Haute" },
+                { name: "Alsace Nature", category: "orgs", stance: "opposed", role: "Association environnementale", position: "Alerte sur les impacts : chaleur, bruit, énergie.", evidence: "Il faut qu’il y ait une masse d’habitants qui disent non.", certainty: "Haute" },
+                { name: "Alter Alsace Énergies", category: "orgs", stance: "opposed", role: "Association environnementale", position: "Dénonce la colonisation numérique et la gabegie énergétique.", evidence: "Nous risquons de dérouler le tapis rouge à une entreprise états-unienne [...] qui va nous mettre dans une situation de colonisés.", certainty: "Haute" },
+                { name: "Confédération paysanne", category: "orgs", stance: "opposed", role: "Syndicat agricole", position: "S'oppose à l'artificialisation de 36 hectares.", evidence: "Il y a plein d'innovations qui sont possibles pour ramener de l'emploi sur le territoire.", certainty: "Haute" },
+                { name: "MRAe Grand Est", category: "orgs", stance: "neutral", role: "Autorité environnementale", position: "Avis sévère sur les lacunes du dossier.", evidence: "Souffre d’un manque d’approfondissement des analyses.", certainty: "Haute" },
+                { name: "Mouvement écologiste indépendant", category: "orgs", stance: "opposed", role: "Parti / Association", position: "Opposé à l'urbanisation des bords du Rhin.", evidence: "Ce que nous disons, c’est qu’il faut arrêter cette urbanisation linéaire.", certainty: "Haute" },
+                { name: "Microsoft", category: "porteurs", stance: "favorable", role: "Porteur du projet", position: "Défend l'implantation de l'IA générative et la création d'emplois.", evidence: "Les data centers sont des infrastructures essentielles qui prennent de plus en plus de place dans notre vie.", certainty: "Haute" },
+                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire réseau électrique", position: "Aménage le raccordement industriel.", evidence: "Nous prenons en compte la demande de Microsoft.", certainty: "Haute" },
+                { name: "SMO", category: "porteurs", stance: "favorable", role: "Syndicat mixte gestionnaire", position: "Cède les 36 hectares de foncier.", evidence: "N/A", certainty: "Haute" }
+            ],
+            griefs: [
+                { title: "⚡ Surconsommation énergétique & Monopolisation", text: "Le data center consommera jusqu'à 80 % de la consommation électrique actuelle des ménages du Haut-Rhin (1 500 à 1 750 GWh), accaparant virtuellement l'hydroélectricité locale décarbonée." },
+                { title: "🌾 Artificialisation des Terres", text: "Consommation irréversible de 36 à 40 hectares de terres agricoles fertiles, dont une dizaine d'hectares cultivés en agriculture biologique le long du Grand Canal d'Alsace." },
+                { title: "🌡️ Dôme de chaleur & Nuisances sanitaires", text: "Craintes sérieuses concernant la dissipation de chaleur (+2 à 3 °C localement), le bruit continu des serveurs, et la pollution aux NOx liée au fonctionnement test ou dégradé des 111 groupes électrogènes de secours." }
+            ],
+            vigilance: [
+                "<strong>Évolution réglementaire sur le secret des affaires</strong> : Le blocage européen sur les données environnementales des sites risque de limiter considérablement l'accès citoyen et associatif à l'information réelle sur la pollution et la consommation, en tension avec la convention d'Aarhus.",
+                "<strong>Phasage asymétrique</strong> : Incohérence relevée entre la cession intégrale du foncier (36 ha) et la promesse de Microsoft qui ne s'engage avec certitude que sur le premier bâtiment à ce stade, soulevant le risque d'une immobilisation foncière disproportionnée."
+            ],
+            sources: [
+                "<strong>Rapport Petit-Landau 24-06-2026.docx</strong> : Recueil d'articles de presse (DNA, France 3, Rue89 Strasbourg, ChannelNews...) et communiqués locaux couvrant l'enquête publique."
+            ]
+        };
+
+        let activeCategory = 'all';
+        let activeStance = 'all';
+
+        // Initialisation de la page au chargement du DOM
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('header-title').innerText = projectData.meta.title;
+            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+        });
+
+        // Gestion de la commutation d'onglets (this transmis explicitement pour éviter tout gel du navigateur)
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Rendu dynamique de la barre latérale et calcul automatisé des effectifs
+        function renderFilters() {
+            const catContainer = document.getElementById('cat-filters-container');
+            const stanceContainer = document.getElementById('stance-filters-container');
+            
+            catContainer.innerHTML = '';
+            stanceContainer.innerHTML = '';
+
+            // 1. Filtres Catégories
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
+                const activeClass = key === activeCategory ? 'active' : '';
+                catContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
+                        <span>${label}</span> <span class="count">${count}</span>
+                    </button>
+                `;
+            });
+
+            // 2. Positionnements (Stances)
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const activeClass = key === activeStance ? 'active' : '';
+                stanceContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+                        <span>${label}</span>
+                    </button>
+                `;
+            });
+        }
+
+        function setCategoryFilter(category, el) {
+            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeCategory = category;
+            renderGrid();
+        }
+
+        function setStanceFilter(stance, el) {
+            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeStance = stance;
+            renderGrid();
+        }
+
+        // Rendu dynamique des fiches acteurs filtrées
+        function renderGrid() {
+            const grid = document.getElementById('actors-grid');
+            grid.innerHTML = '';
+
+            const filteredActors = projectData.actors.filter(actor => {
+                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
+                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
+                return matchCategory && matchStance;
+            });
+
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                return;
+            }
+
+            filteredActors.forEach(actor => {
+                const card = document.createElement('div');
+                card.className = `actor-card ${actor.stance}`;
+                card.onclick = () => openActorModal(actor);
+
+                card.innerHTML = `
+                    <div class="actor-header">
+                        <div class="actor-name">${actor.name}</div>
+                        <div class="actor-role">${actor.role}</div>
+                    </div>
+                    <div class="actor-body">${actor.position}</div>
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
+                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Rendu dynamique de l'onglet 2 (Griefs)
+        function renderGriefs() {
+            const container = document.getElementById('griefs-grid');
+            container.innerHTML = '';
+
+            projectData.griefs.forEach(g => {
+                container.innerHTML += `
+                    <div class="grief-card">
+                        <h2>${g.title}</h2>
+                        <p>${g.text}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Rendu de l'onglet 3 (Vigilance & Sources) via document.getElementById sécurisé
+        function renderLists() {
+            const vigList = document.getElementById('vigilance-list');
+            const srcList = document.getElementById('sources-list');
+
+            vigList.innerHTML = '';
+            srcList.innerHTML = '';
+
+            projectData.vigilance.forEach(item => {
+                vigList.innerHTML += `<li>${item}</li>`;
+            });
+            projectData.sources.forEach(item => {
+                srcList.innerHTML += `<li>${item}</li>`;
+            });
+        }
+
+        // Hydratation et ouverture saine de la fenêtre modale
+        function openActorModal(actor) {
+            document.getElementById('modal-name').innerText = actor.name;
+            document.getElementById('modal-role').innerText = actor.role;
+            document.getElementById('modal-position').innerText = actor.position;
+            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById('modal-certainty').innerText = actor.certainty;
+
+            const badge = document.getElementById('modal-stance-badge');
+            badge.className = `badge ${actor.stance}`;
+            badge.innerText = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('actor-modal');
+            modal.classList.toggle('active', show);
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'actor-modal') {
+                toggleModal(false);
+            }
+        }
+    </script>
+</body>
+</html>
