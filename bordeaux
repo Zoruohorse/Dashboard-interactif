@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartographie Interactive — Projet BXIA Bordeaux</title>
+    <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            
+            --color-opposed: #ef4444;
+            --color-opposed-light: #fee2e2;
+            --color-favorable: #22c55e;
+            --color-favorable-light: #dcfce7;
+            --color-neutral: #f59e0b;
+            --color-neutral-light: #fef3c7;
+            
+            --primary: #3b82f6;
+            --radius: 12px;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 2rem;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1.5rem;
+        }
+
+        header h1 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Menu Onglets */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: var(--radius);
+            transition: var(--transition);
+        }
+
+        .tab-btn:hover {
+            background-color: var(--border-color);
+            color: var(--text-main);
+        }
+
+        .tab-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Interface Cartographie */
+        .dashboard-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Sidebar Filtres */
+        .filters-sidebar {
+            background-color: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 2rem;
+        }
+
+        .filter-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-section h3 {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            text-align: left;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .filter-btn .count {
+            font-size: 0.75rem;
+            background-color: rgba(0, 0, 0, 0.05);
+            padding: 0.1rem 0.4rem;
+            border-radius: 10px;
+        }
+
+        .filter-btn.active .count {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Grille des Cartes Acteurs */
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .actor-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+
+        .actor-role {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .actor-body {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .actor-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.025em;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Modal Détails Acteur */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            max-width: 600px;
+            width: 100%;
+            padding: 2rem;
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            position: relative;
+            animation: modalAnim 0.2s ease-out;
+        }
+
+        @keyframes modalAnim {
+            from { transform: scale(0.95); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-field {
+            margin-bottom: 1.25rem;
+        }
+
+        .modal-field label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .modal-field p {
+            font-size: 1rem;
+            color: var(--text-main);
+        }
+
+        .modal-verbatim {
+            background-color: var(--bg-primary);
+            padding: 1rem;
+            border-left: 4px solid var(--primary);
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        /* Styles Onglet Griefs */
+        .griefs-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            gap: 2rem;
+        }
+
+        @media (max-width: 640px) {
+            .griefs-container { grid-template-columns: 1fr; }
+        }
+
+        .grief-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+        }
+
+        .grief-card h2 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Listes & Sources */
+        .list-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+
+        .list-card h2 {
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .list-card ul {
+            padding-left: 1.5rem;
+        }
+
+        .list-card li {
+            margin-bottom: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 id="header-title">Chargement...</h1>
+        <p id="header-subtitle"></p>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('carto', this)">Cartographie des Acteurs</button>
+        <button class="tab-btn" onclick="switchTab('griefs', this)">Synthèse des Griefs</button>
+        <button class="tab-btn" onclick="switchTab('vigilance', this)">Points de Vigilance &amp; Sources</button>
+    </nav>
+
+    <div id="tab-carto" class="tab-content active">
+        <div class="dashboard-layout">
+            <aside class="filters-sidebar">
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+                    <div class="filter-options" id="cat-filters-container"></div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Positionnement</h3>
+                    <div class="filter-options" id="stance-filters-container"></div>
+                </div>
+            </aside>
+
+            <main class="actors-grid" id="actors-grid"></main>
+        </div>
+    </div>
+
+    <div id="tab-griefs" class="tab-content">
+        <div class="griefs-container" id="griefs-grid"></div>
+    </div>
+
+    <div id="tab-vigilance" class="tab-content">
+        <div class="list-card">
+            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <ul id="vigilance-list"></ul>
+        </div>
+
+        <div class="list-card">
+            <h2>📰 Médias et sources d'investigation répertoriés</h2>
+            <ul id="sources-list"></ul>
+        </div>
+    </div>
+
+    <div class="modal" id="actor-modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <button class="close-modal" onclick="toggleModal(false)">×</button>
+            <div class="modal-field">
+                <label>Nom / Entité</label>
+                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+            </div>
+            <div class="modal-field">
+                <label>Fonction / Rattachement</label>
+                <p id="modal-role"></p>
+            </div>
+            <div class="modal-field">
+                <label>Positionnement ou Argument Principal</label>
+                <p id="modal-position"></p>
+            </div>
+            <div class="modal-field">
+                <label>Verbatim / Preuve documentaire</label>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                <div class="modal-field" style="margin:0;">
+                    <label>Orientation</label>
+                    <span id="modal-stance-badge" class="badge"></span>
+                </div>
+                <div class="modal-field" style="margin:0; text-align: right;">
+                    <label>Niveau de certitude</label>
+                    <p id="modal-certainty" class="certitude"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const projectData = {
+            meta: {
+                title: "Cartographie Interactive — Projet BXIA Bordeaux",
+                subtitle: "Analyse décisionnelle des dynamiques de souveraineté numérique, des impacts environnementaux et des clivages politiques autour du projet de supercalculateur à Bordeaux-Lac."
+            },
+            taxonomy: {
+                categories: {
+                    "all": "Tous les acteurs",
+                    "opposants": "Opposants & Experts",
+                    "elus-opp": "Élus Opposés/Critiques",
+                    "elus-fav": "Élus Favorables/Prudents",
+                    "orgs": "Orgs & Collectifs",
+                    "porteurs": "Porteurs & Économie"
+                },
+                stances: {
+                    "all": "Toutes les positions",
+                    "opposed": "Opposé / Critique",
+                    "favorable": "Favorable / Soutien",
+                    "neutral": "Prudent / Ambigü"
+                }
+            },
+            actors: [
+                {
+                    name: "Benjamin Delaux",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Fondateur et président de NFU (Nouvelles Fonctions Urbaines)",
+                    position: "Pousse pour la création d'un pôle numérique souverain européen exemplaire afin de briser la dépendance envers les GAFAM.",
+                    evidence: "« Le but c'est de doter la France et l'Europe d'une capacity souveraine à développer et exploiter l'IA, en réduisant la dépendance étrangère ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Laurent Halimi",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Président de la foncière Osae Partners",
+                    position: "Garant du financement privé à long terme reposant sur des capitaux majoritairement français et européens.",
+                    evidence: "« On prévoit environ 300 000 cartes graphiques à 35 000 euros pièce sur ce projet, ce qui porte l’investissement total entre dix et douze milliards d’euros ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Vincent Feltesse",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Cofondateur de NFU et ancien président de Bordeaux Métropole",
+                    position: "Apporte son ancrage territorial pour structurer un consortium capable de bâtir un pôle unique en Europe.",
+                    evidence: "« On pense que nous avons les moyens de faire ici un pôle numérique souverain, unique en France voire en Europe ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Pierre Hurmic",
+                    category: "elus-fav",
+                    stance: "favorable",
+                    role: "Maire écologiste de Bordeaux",
+                    position: "Défend un pragmatisme économique et politique en saisissant l'opportunité tout en promettant une vigilance environnementale stricte.",
+                    evidence: "« Ne pas répondre à une opportunité, ça serait une faute politique ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Christine Bost",
+                    category: "elus-fav",
+                    stance: "favorable",
+                    role: "Président socialiste de Bordeaux Métropole",
+                    position: "Justifie l'approbation express du dossier par l'impératif industriel de conserver la priorité de raccordement auprès de RTE.",
+                    evidence: "« Si on n’ouvre pas le sujet, le porteur de projet perd son tour dans le rang des priorités de RTE ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Stéphane Delpeyrat-Vincent",
+                    category: "elus-fav",
+                    stance: "favorable",
+                    role: "Vice-président en charge du développement économique",
+                    position: "Valorise l'enjeu stratégique de calcul intensif pour la recherche et les industries locales de l'aéronautique et de la défense.",
+                    evidence: "« À ce jour, nous sommes totalement dans la main des industries américaines, de leur bon vouloir ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Christophe Duprat",
+                    category: "elus-opp",
+                    stance: "opposed",
+                    role: "Élu d'opposition Les Républicains (LR) et maire de Saint-Aubin-de-Médoc",
+                    position: "Reconnaît l'intérêt du projet mais fustige la précipitation de la délibération et le manque d'informations préalables.",
+                    evidence: "« Vous nous mettez dans l’embarras [...] la précipitation à voter cette délibération au dernier moment ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Thomas Cazenave",
+                    category: "elus-opp",
+                    stance: "opposed",
+                    role: "Député et candidat de l'opposition Renaissance",
+                    position: "Dénonce l'opacité de la méthode, le secret des négociations et l'absence totale de mise en concurrence via un appel à manifestation d'intérêt.",
+                    evidence: "« Une méthode ni transparente ni respectueuse des élus métropolitains. Aujourd’hui, c’est un projet de cession à deux opérateurs immobiliers ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Fabien Robert",
+                    category: "elus-opp",
+                    stance: "opposed",
+                    role: "Conseiller d'opposition MoDem",
+                    position: "Pointe la contradiction majeure entre l'idéal écologique affiché par la majorité et la démesure énergétique inhérente au projet.",
+                    evidence: "« Il y a une forme de contradiction à faire des micro-forêts et des data centers ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Philippe Poutou",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Élu d'opposition de gauche anticapitaliste",
+                    position: "S'oppose sur le fond au modèle économique sous-jacent et ironise sur le positionnement de la droite et de la gauche.",
+                    evidence: "« La gauche s’intègre tellement bien au libéralisme qu’elle accepte tout et qu’elle en vient à tout justifier ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "La France Insoumise (LFI)",
+                    category: "orgs",
+                    stance: "opposed",
+                    role: "Noyau d'opposition politique locale",
+                    position: "Exige un moratoire immédiat face à ce qu'elle qualifie de dérive anti-écologique.",
+                    evidence: "Dénoncent « une aberration démocratique et écologique », avec une consommation électrique « colossale ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Julien Anselme",
+                    category: "opposants",
+                    stance: "neutral",
+                    role: "Président du Pôle de compétitivité ENTER (numérique responsable)",
+                    position: "Soutient la souveraineté sur le principe mais exige des garanties strictes concernant le Cloud Act, le recyclage et l'exploitation réelle.",
+                    evidence: "« C’est un bon pas d’avoir nos données placées en Europe, mais ça ne suffit pas à en garantir leur souveraineté ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Fabrice Cousin",
+                    category: "porteurs",
+                    stance: "neutral",
+                    role: "CEO d'UltraEdge",
+                    position: "Acteur économique focalisé sur le marché pragmatique de la migration locale du 'on-premise' des PME via le rétrofit.",
+                    evidence: "« Les besoins et les usages de microdatacenter ne sont pas encore là. Mais il y a bien un mouvement qui est opéré ».",
+                    certainty: "Haute"
+                },
+                {
+                    name: "David Howson",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Président de Vantage Data Centers (Europe, Moyen-Orient, Afrique)",
+                    position: "Développe en parallèle un campus hyperscale massif de 400 MW à proximité de Bordeaux pour capter la demande Cloud/IA.",
+                    evidence: "« Notre arrivée en France aux côtés d’Altarea nous permet de proposer des capacités numériques avec une vitesse et une échelle sans équivalent ».",
+                    certainty: "Haute"
+                }
+            ],
+            griefs: [
+                {
+                    title: "⚡ Consommation électrique colossale",
+                    text: "Le projet BXIA prévoit d’atteindre une puissance totale de 380 MW, soit l'équivalent de 10 % de la centrale nucléaire du Blayais ou les deux tiers de la consommation de la ville de Bordeaux, suscitant de vives inquiétudes quant à l'alimentation du site."
+                },
+                {
+                    title: "🌐 Impact environnemental et îlot de chaleur",
+                    text: "Malgré l'implantation sur un parking artificialisé, l'opposition craint la création d'un îlot de chaleur majeur et une consommation d'eau critique pour refroidir les serveurs, créant un paradoxe flagrant avec les politiques locales de végétalisation urbaine."
+                },
+                {
+                    title: "📑 Déficit de transparence et précipitation électorale",
+                    text: "Le choix de négocier de gré à gré en excluant la procédure de l'appel à manifestation d'intérêt (AMI), couplé à l'envoi des documents trois jours avant le vote en pleine campagne municipale, est dénoncé comme un passage en force démocratique."
+                },
+                {
+                    title: "🔒 Flou sur la souveraineté technologique",
+                    text: "Les experts s'interrogent sur l'indépendance réelle vis-à-vis du Cloud Act américain, l'absence d'opérateur industriel officiellement ancré au projet, et la dépendance inhérente aux constructeurs étrangers pour la fourniture des 300 000 cartes graphiques requises."
+                }
+            ],
+            vigilance: [
+                "<strong>Gouvernance industrielle :</strong> L'absence d'un exploitant technologique de premier rang identifié à ce stade fait peser le risque d'un portage purement immobilier et spéculatif du foncier public.",
+                "<strong>Faisabilité des promesses écologiques :</strong> Les engagements contractuels relatifs au refroidissement strict en circuit fermé et à la valorisation réelle de la chaleur fatale vers les réseaux urbains restent à formaliser juridiquement.",
+                "<strong>Saturation des infrastructures électriques :</strong> La concomitance de BXIA (380 MW) et du projet concurrent Altarea/Vantage (400 MW) à Bordeaux risque de créer un goulet d'étranglement majeur pour les capacités de raccordement de RTE."
+            ],
+            sources: [
+                "<strong>sudouest.fr :</strong> Relate en continu les affrontements politiques au conseil de la métropole, le détail des votes à bulletin secret et l'analyse de la posture de la municipalité écologiste.",
+                "<strong>latribune.fr :</strong> Fournit le détail des données financières de la foncière Osae, les projections de volumes de cartes graphiques et le dimensionnement technique par bâtiment.",
+                "<strong>next.ink :</strong> Documente la genèse industrielle du projet, l'historique d'Equinix à Bruges et la requalification de l'ancien projet BX2 en projet souverain BXIA.",
+                "<strong>placeco.fr :</strong> Met en lumière les interrogations techniques des experts du numérique aquitain et les problématiques liées au Cloud Act américain.",
+                "<strong>zdnet.fr :</strong> Offre un point de comparaison sur la stratégie locale d'UltraEdge axée sur le refroidissement liquide direct (DLC) et les Datapoles.",
+                "<strong>dcmag.fr :</strong> Révèle le partenariat Altarea et Vantage en périphérie bordelaise, exacerbant les enjeux de concurrence pour les ressources électriques locales."
+            ]
+        };
+
+        let activeCategory = 'all';
+        let activeStance = 'all';
+
+        // Lancement au chargement du DOM
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById('header-title').innerText = projectData.meta.title;
+            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+        });
+
+        // Gestion du menu Onglets
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            btn.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        // Rendu dynamique de la barre latérale et calcul automatisé des effectifs
+        function renderFilters() {
+            const catContainer = document.getElementById('cat-filters-container');
+            const stanceContainer = document.getElementById('stance-filters-container');
+            
+            catContainer.innerHTML = '';
+            stanceContainer.innerHTML = '';
+
+            // 1. Filtres Catégories
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
+                const activeClass = key === activeCategory ? 'active' : '';
+                catContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
+                        <span>${label}</span> <span class="count">${count}</span>
+                    </button>
+                `;
+            });
+
+            // 2. Positionnements (Stances)
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const activeClass = key === activeStance ? 'active' : '';
+                stanceContainer.innerHTML += `
+                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+                        <span>${label}</span>
+                    </button>
+                `;
+            });
+        }
+
+        function setCategoryFilter(category, el) {
+            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeCategory = category;
+            renderGrid();
+        }
+
+        function setStanceFilter(stance, el) {
+            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            activeStance = stance;
+            renderGrid();
+        }
+
+        // Rendu dynamique des fiches acteurs filtrées
+        function renderGrid() {
+            const grid = document.getElementById('actors-grid');
+            grid.innerHTML = '';
+
+            const filteredActors = projectData.actors.filter(actor => {
+                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
+                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
+                return matchCategory && matchStance;
+            });
+
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                return;
+            }
+
+            filteredActors.forEach(actor => {
+                const card = document.createElement('div');
+                card.className = `actor-card ${actor.stance}`;
+                card.onclick = () => openActorModal(actor);
+
+                card.innerHTML = `
+                    <div class="actor-header">
+                        <div class="actor-name">${actor.name}</div>
+                        <div class="actor-role">${actor.role}</div>
+                    </div>
+                    <div class="actor-body">${actor.position}</div>
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
+                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Rendu dynamique de l'onglet 2 (Griefs)
+        function renderGriefs() {
+            const container = document.getElementById('griefs-grid');
+            container.innerHTML = '';
+
+            projectData.griefs.forEach(g => {
+                container.innerHTML += `
+                    <div class="grief-card">
+                        <h2>${g.title}</h2>
+                        <p>${g.text}</p>
+                    </div>
+                `;
+            });
+        }
+
+        // Rendu des listes de vigilance et sources (onglet 3)
+        function renderLists() {
+            const vigList = document.getElementById('vigilance-list');
+            const srcList = document.getElementById('sources-list');
+
+            vigList.innerHTML = '';
+            srcList.innerHTML = '';
+
+            projectData.vigilance.forEach(item => {
+                vigList.innerHTML += `<li>${item}</li>`;
+            });
+            projectData.sources.forEach(item => {
+                srcList.innerHTML += `<li>${item}</li>`;
+            });
+        }
+
+        // Hydratation et ouverture de la fenêtre modale
+        function openActorModal(actor) {
+            document.getElementById('modal-name').innerText = actor.name;
+            document.getElementById('modal-role').innerText = actor.role;
+            document.getElementById('modal-position').innerText = actor.position;
+            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById('modal-certainty').innerText = actor.certainty;
+
+            const badge = document.getElementById('modal-stance-badge');
+            badge.className = `badge ${actor.stance}`;
+            badge.innerText = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById('actor-modal');
+            modal.classList.toggle('active', show);
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'actor-modal') {
+                toggleModal(false);
+            }
+        }
+    </script>
+</body>
+</html>
