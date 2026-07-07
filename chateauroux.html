@@ -571,14 +571,24 @@
                 { name: "Telehouse", category: "porteurs", stance: "favorable", role: "Opérateur japonais", position: "Porteur du projet Cézanne contesté aux Pennes-Mirabeau pour son emprise thermique.", evidence: "Développe des projets similaires soumis à critique.", certainty: "Haute" },
                 { name: "Marie-Claire Eustache", category: "orgs", stance: "neutral", role: "Garante de la CNDP", position: "Désignée officiellement pour encadrer le processus de concertation préalable à Ozans.", evidence: "Nomination officielle.", certainty: "Haute" },
                 { name: "Romane Harmel-Samarcq", category: "orgs", stance: "neutral", role: "Garante de la CNDP", position: "Désignée officiellement pour superviser la concertation préalable à Ozans.", evidence: "Nomination officielle.", certainty: "Haute" },
-                { name: "Sébastien Missoffe", category: "porteurs", stance: "favorable", role: "Directeur général de Google France", position: "Confirme que l'entreprise étudie activement toutes les options techniques viables pour le site de Châteauroux.", evidence: "Déclarations à la presse sur la viabilité locale.", certainty: "Haute" }
+                { name: "Sébastien Missoffe", category: "porteurs", stance: "favorable", role: "Directeur général de Google France", position: "Confirme que l'entreprise étudie activement toutes les options techniques viables pour le site de Châteauroux.", evidence: "Déclarations à la presse sur la viabilité locale.", certainty: "Haute" }, 
+                { name: "Pierre Allorant", category: "orgs", stance: "neutral", role: "Président du Ceser Centre-Val de Loire", position: "Accueille la saisine citoyenne pour produire un rapport consultatif sur les impacts du projet.", evidence: "Notre rôle est de regarder si les projets [...] sont un plus ou non pour les habitants.", certainty: "Haute" },
+                { name: "Ceser", category: "orgs", stance: "neutral", role: "Assemblée consultative régionale", position: "Saisi par les opposants pour instruire le dossier et formuler un avis officiel au Conseil régional.", evidence: "Le Ceser va désigner une commission pour travailler sur le sujet, avec des auditions d’experts.", certainty: "Haute" },
+                { name: "CGT Indre", category: "orgs", stance: "opposed", role: "Syndicat", position: "Co-organise les manifestations et porte activement la collecte des 4000 signatures pour la saisine citoyenne.", evidence: "La CGT et le collectif « Ozans dire non » organisent un deuxième rassemblement.", certainty: "Haute" },
+                { name: "Delphine Chambonneau", category: "elus-opp", stance: "opposed", role: "Élue d'opposition (Châteauroux)", position: "S'est prononcée formellement contre la délibération autorisant l'étude de raccordement électrique.", evidence: "Adopté à 49 voix pour et trois voix contre (dont celle de Delphine Chambonneau).", certainty: "Haute" },
+                { name: "Bruno Mascle", category: "elus-opp", stance: "opposed", role: "Élu d'opposition (Déols)", position: "S'est prononcé formellement contre la délibération autorisant l'étude de raccordement électrique.", evidence: "Adopté à 49 voix pour et trois voix contre (dont celle de Bruno Mascle).", certainty: "Haute" },
+                { name: "Anne Le Hénanff", category: "elus-fav", stance: "favorable", role: "Ministre déléguée chargée de l'IA", position: "Encourage le déploiement de data centers en France pour des raisons géostratégiques.", evidence: "Implanter des centres de données sur notre sol est une priorité, au service de notre souveraineté numérique.", certainty: "Haute" }
             ],
-            griefs: [], // Géré en dur dans l'HTML de l'onglet 2 pour des raisons de densité
+            griefs: [
+                { title: "🏛️ Appel à l'arbitrage régional (Saisine)", text: "Face au blocage et au soutien inébranlable de l'agglomération, les opposants activent le levier de la 'saisine citoyenne' (4000 signatures) pour contraindre le Ceser à instruire le dossier de manière neutre." }  
+            ], 
             vigilance: [
                 "<strong>Culture du Secret et Opacité :</strong> Les élus des petites communes, les militants et la CNDP soulignent l'extrême discrétion de Google (agissant via Tricolore/Violet Computing), générant un fort sentiment de développement 'en sous-marin' (rétention d'informations d'Enedis/RTE).",
                 "<strong>Incertitudes Écologiques (PFAS, Eau, Chaleur) :</strong> Le flou technique maintenu sur les systèmes de refroidissement suscite de sérieuses craintes concernant la gestion des fluides frigorifiques, le risque de stress hydrique et la formation d'îlots de chaleur massifs.",
                 "<strong>Saucissonnage et Stratégie Foncière :</strong> L'apparition d'un 'projet miroir' au Pêchereau et la multiplication de filiales-écrans font craindre un contournement progressif de l'évaluation environnementale globale.",
-                "<strong>Décalage Promesses / Réalité :</strong> La rhétorique locale évoquant une 'chance historique' (Gil Avérous) se heurte aux doutes des sociologues et experts pointant le mirage de l'emploi et l'incompatibilité de la valorisation de la chaleur pour de si petites communes."
+                "<strong>Décalage Promesses / Réalité :</strong> La rhétorique locale évoquant une 'chance historique' (Gil Avérous) se heurte aux doutes des sociologues et experts pointant le mirage de l'emploi et l'incompatibilité de la valorisation de la chaleur pour de si petites communes.", 
+                "<strong>Fermeture du CTR local :</strong> La fin de vie annoncée du Centre de Traitement et de Redondance (CTR) de Châteauroux met en lumière la nouvelle réalité industrielle : les petites structures régionales disparaissent au profit de méga-hubs ultra-denses comme celui projeté par Google à Ozans."
+                
             ],
             sources: [
                 "<strong>La Nouvelle République :</strong> Source locale centrale sur le projet Google, la concertation, le collectif Ozans dire non et les réactions politiques.",
@@ -588,7 +598,8 @@
                 "<strong>ICI Berry :</strong> Média cité au sujet du plan Indre 2030 et des positions de Thibault Lanxade.",
                 "<strong>MyPetition.org :</strong> Plateforme en ligne hébergeant la pétition de La France Insoumise.",
                 "<strong>news.google.com :</strong> Agrégateur d'actualités ayant relayé le sujet.",
-                "<strong>Ouest-France :</strong> Média national ayant interviewé la direction de Google France."
+                "<strong>Ouest-France :</strong> Média national ayant interviewé la direction de Google France.", 
+                "<strong>Multinationales.org :</strong> Production de longues enquêtes documentées décortiquant la stratégie d'influence territoriale, le lobbying et l'opacité des GAFAM en amont des élections municipales."
             ]
         };
 
