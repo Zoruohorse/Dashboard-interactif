@@ -599,21 +599,43 @@
                 { name: "STopMicro", category: "orgs", stance: "opposed", role: "Collectif techno-critique grenoblois", position: "Cité comme référence de mobilisation contre les industries numériques de forte puissance.", evidence: "Inspiration structurante pour les mouvements locaux.", certainty: "Haute" },
                 { name: "MRAe", category: "orgs", stance: "neutral", role: "Mission Régionale d'Autorité Environnementale", position: "Émet un avis d'alerte critique sur l'usage de gaz SF6 et les risques de fuites de PFAS.", evidence: "Avis d'alerte environnementale formel déposé.", certainty: "Haute" },
                 { name: "L’Européenne", category: "porteurs", stance: "neutral", role: "Ancien porteur du projet logistique abandonné", position: "Bénéficiaire d'un protocole d'accord transactionnel avec la CC2SO.", evidence: "Passé administratif documenté avec le commissaire-enquêteur.", certainty: "Haute" },
-                { name: "Commissaire-enquêteur", category: "orgs", stance: "neutral", role: "Autorité indépendante", position: "Ayant rendu un avis défavorable motivé sur l'ancien projet logistique au vu des nuisances de proximité.", evidence: "Avis défavorable émis sur l'antériorité foncière.", certainty: "Haute" }
+                { name: "Commissaire-enquêteur", category: "orgs", stance: "neutral", role: "Autorité indépendante", position: "Ayant rendu un avis défavorable motivé sur l'ancien projet logistique au vu des nuisances de proximité.", evidence: "Avis défavorable émis sur l'antériorité foncière.", certainty: "Haute" },
+                { name: "Mistral AI", category: "porteurs", stance: "favorable", role: "Start-up IA", position: "Membre opérationnel du consortium porteur du projet aux côtés de MGX et Nvidia.", evidence: "Porté par un consortium formé de MGX, [...] Mistral AI, l’américain Nvidia", certainty: "Haute" },
+                { name: "École Polytechnique", category: "porteurs", stance: "favorable", role: "Établissement académique", position: "Partenaire pour la création d'un pôle académique intégré au site.", evidence: "Prévoit aussi un campus sur une surface de 60 à 65 ha, en partenariat avec l’Ecole Polytechnique.", certainty: "Haute" },
+                { name: "Pierre Ory", category: "porteurs", stance: "favorable", role: "Préfet de Seine-et-Marne", position: "A officiellement autorisé l'installation du projet Campus IA le 29 juillet.", evidence: "Le préfet a donné son autorisation [...] le 29 juillet", certainty: "Haute" },
+                { name: "Ersilia Soudais", category: "elus-opp", stance: "opposed", role: "Députée LFI-NFP", position: "Dénonce une aberration écologique et un impact territorial démesuré.", evidence: "Ma circonscription est la poubelle de l’Île-de-France.", certainty: "Haute" },
+                { name: "Cyrielle Chatelain", category: "elus-opp", stance: "opposed", role: "Députée écologiste", position: "Appelle à un moratoire national sur les datacenters et critique l'accaparement foncier.", evidence: "Il n’est pas acceptable que les hyperscalers s’approprient nos terres, notre énergie", certainty: "Haute" },
+                { name: "Valérie Masson-Delmotte", category: "opposants", stance: "opposed", role: "Paléoclimatologue", position: "Alerte sur le développement d'îlots de chaleur et l'envolée des émissions de NOx des groupes électrogènes.", evidence: "Un seul projet pourrait conduire à émettre 3 % de plus de NOx par an juste pour la maintenance.", certainty: "Haute" },
+                { name: "Jean Guiony", category: "opposants", stance: "opposed", role: "Urbaniste", position: "Assimile le projet à un accaparement foncier de type féodal menaçant l'agriculture.", evidence: "Pas de foncier, pas de datacenter, pas de plateforme.", certainty: "Haute" },
+                { name: "Eveline Biaggini", category: "opposants", stance: "opposed", role: "Habitante", position: "S'oppose au gigantisme de l'infrastructure pour ses conséquences climatiques.", evidence: "Écologiquement parlant, c’est une cata.", certainty: "Haute" },
+                { name: "Giuliano Del Negro", category: "opposants", stance: "neutral", role: "Habitant", position: "S'inquiète de l'urbanisation collatérale induite et des nuisances en phase chantier.", evidence: "On aimerait bien que Fouju reste comme ça.", certainty: "Moyenne" },
+                { name: "Laurent", category: "opposants", stance: "favorable", role: "Habitant", position: "Soutient activement le projet pour ses promesses de dynamisation financière.", evidence: "Ça va générer de l’argent et de l’emploi.", certainty: "Haute" },
+                { name: "Jean-Noël Péché", category: "opposants", stance: "opposed", role: "Apiculteur", position: "Déplore la perte injustifiée de terres agricoles utiles au profit de l'infrastructure numérique.", evidence: "Et là, on en crame 70 hectares pour rien.", certainty: "Haute" }
             ],
-            griefs: [], // Restitué en dur dans l'HTML de l'onglet 2
+            griefs: [
+                { title: "🌡️ Îlots de chaleur numériques", text: "L'exploitation des centres de calcul menace de générer un 'panache de chaleur', augmentant la température de 2°C dans un rayon de 10 km et aggravant le stress végétal et humain." },
+                { title: "💨 Rejets massifs de polluants atmosphériques (NOx)", text: "La seule maintenance obligatoire des 613 groupes électrogènes diesel entraînerait une hausse drastique de 3 % des émissions nationales d'oxydes d'azote." },
+                { title: "🏰 Néo-féodalisme foncier", text: "Le gigantisme du projet est analysé comme un accaparement agressif par les géants de la tech de terres agricoles stratégiques, privant la profession d'un accès vital au sol." }
+    ],
+            
             vigilance: [
                 "<strong>Gouvernance et Secret des affaires :</strong> Thibaud Desfossés (MGX) refuse de détailler la structure de gouvernance du projet et se mure derrière le secret des affaires.",
                 "<strong>Incertitudes des Consommations :</strong> Flou persistant entourant les volumes réels de consommation en eau et l'emprise foncière exacte, dénoncé par les organisations agricoles.",
                 "<strong>Positionnement Politique Régional :</strong> Posture ambiguë et non prononcée publiquement de Valérie Pécresse (Région IdF), maintenant une incertitude sur le rôle de la région concernant un éventuel cofinancement.",
-                "<strong>Évaluation Environnementale :</strong> Doutes et alertes critiques soulevés par la MRAe sur les protocoles d'utilisation du gaz SF6 et la non-maîtrise des risques de fuites de PFAS."
+                "<strong>Évaluation Environnementale :</strong> Doutes et alertes critiques soulevés par la MRAe sur les protocoles d'utilisation du gaz SF6 et la non-maîtrise des risques de fuites de PFAS.", 
+                "<strong>Discordance des surfaces annoncées :</strong> L'emprise foncière exacte manque de clarté dans la communication officielle (fluctuations entre 73 hectares à bâtir, 89 hectares globaux, et 90 hectares artificialisés).",
+                "<strong>Faisabilité de la récupération de chaleur :</strong> Les transferts de chaleur fatale prévus vers la future prison de Crisenoy, des serres agricoles et la ville de Melun ne sont actuellement étayés par aucune documentation technique formelle."
+                
             ],
             sources: [
                 "<strong>Le Chiffon :</strong> Journal militant francilien ayant organisé des soirées-débats 'Contre les data centers et leur monde'.",
                 "<strong>Actualité des luttes :</strong> Média militant indépendant assurant la couverture et le relais des mobilisations écologiques d'Île-de-France.",
                 "<strong>mesinfos.fr :</strong> Média d'information économique et légal ayant rendu publique l'attribution du marché de raccordement d'Eiffage.",
                 "<strong>L’Humanité :</strong> Quotidien national d'enquêtes (Pierric Marissal). Source ayant révélé le contrôle émirati (70% MGX) et les risques environnementaux.",
-                "<strong>Observatoire des multinationales :</strong> Plateforme d'investigation économique ayant démonté de manière critique les structures de capitaux cachées derrière Choose France."
+                "<strong>Observatoire des multinationales :</strong> Plateforme d'investigation économique ayant démonté de manière critique les structures de capitaux cachées derrière Choose France.",
+                "<strong>JSS.fr :</strong> Relais des dynamiques locales et de l'acceptabilité sociale auprès des riverains de Fouju.",
+                "<strong>La Relève et la Peste :</strong> Analyse macro-foncière mettant en lumière le phénomène d'accaparement des terres par l'industrie technologique.",
+                "<strong>Assemblée Nationale :</strong> Rapports d'auditions parlementaires documentant l'impact climatique réel des infrastructures."
             ]
         };
 
