@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cartographie interactive — Microsoft Alsace</title>
+
     <style>
         :root {
             --bg-primary: #f8fafc;
@@ -11,15 +12,15 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-            
             --color-opposed: #ef4444;
             --color-opposed-light: #fee2e2;
             --color-favorable: #22c55e;
             --color-favorable-light: #dcfce7;
             --color-neutral: #f59e0b;
             --color-neutral-light: #fef3c7;
-            
             --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
             --radius: 12px;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
             --transition: all 0.2s ease-in-out;
@@ -39,6 +40,11 @@
             padding: 2rem;
         }
 
+        button,
+        input {
+            font: inherit;
+        }
+
         header {
             margin-bottom: 2rem;
             border-bottom: 1px solid var(--border-color);
@@ -46,21 +52,22 @@
         }
 
         header h1 {
+            margin-bottom: 0.5rem;
+            color: #0f172a;
             font-size: 2.25rem;
             font-weight: 800;
-            color: #0f172a;
             letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
         }
 
         header p {
+            max-width: 1100px;
             color: var(--text-muted);
             font-size: 1.1rem;
         }
 
-        /* Menu Onglets */
         .tabs {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-bottom: 2rem;
             border-bottom: 2px solid var(--border-color);
@@ -68,14 +75,14 @@
         }
 
         .tab-btn {
-            background: none;
             border: none;
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+            background: none;
+            color: var(--text-muted);
             font-size: 1rem;
             font-weight: 600;
-            color: var(--text-muted);
-            padding: 0.5rem 1rem;
             cursor: pointer;
-            border-radius: var(--radius);
             transition: var(--transition);
         }
 
@@ -103,41 +110,172 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Interface Cartographie */
         .dashboard-layout {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 310px minmax(0, 1fr);
             gap: 2rem;
             align-items: start;
         }
 
-        @media (max-width: 968px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
+        .actors-area {
+            min-width: 0;
         }
 
-        /* Sidebar Filtres */
-        .filters-sidebar {
-            background-color: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: var(--radius);
+        .results-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 35px;
+            margin-bottom: 1rem;
+        }
+
+        .results-count {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+            min-width: 0;
+        }
+
+        .actor-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            min-height: 220px;
+            overflow: hidden;
             border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.35);
+            outline-offset: 3px;
+        }
+
+        .actor-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header { margin-bottom: 0.75rem; }
+
+        .actor-name {
+            margin-bottom: 0.25rem;
+            overflow-wrap: anywhere;
+            color: #0f172a;
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .actor-role {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .actor-body {
+            display: -webkit-box;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            line-height: 1.4;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+        }
+
+        .actor-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 20px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: right;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 3rem 1.5rem;
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .filters-sidebar {
             position: sticky;
             top: 2rem;
+            min-width: 0;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            background-color: var(--bg-card);
+            box-shadow: var(--shadow);
         }
 
-        .filter-section {
-            margin-bottom: 1.5rem;
-        }
+        .filter-section { margin-bottom: 1.5rem; }
+        .filter-section:last-child { margin-bottom: 0; }
 
         .filter-section h3 {
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
             margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .filter-options {
@@ -150,272 +288,321 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 0.75rem;
             width: 100%;
-            padding: 0.6rem 0.8rem;
-            background-color: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            text-align: left;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
             font-size: 0.9rem;
             font-weight: 500;
-            color: var(--text-main);
+            text-align: left;
             cursor: pointer;
             transition: var(--transition);
         }
 
-        .filter-btn:hover, .filter-btn.active {
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: var(--primary);
             background-color: var(--primary);
             color: white;
-            border-color: var(--primary);
+        }
+
+        .filter-btn:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.25);
+            outline-offset: 2px;
         }
 
         .filter-btn .count {
-            font-size: 0.75rem;
-            background-color: rgba(0, 0, 0, 0.05);
-            padding: 0.1rem 0.4rem;
+            flex: 0 0 auto;
+            min-width: 24px;
             border-radius: 10px;
+            padding: 0.1rem 0.4rem;
+            background-color: rgba(0, 0, 0, 0.06);
+            font-size: 0.75rem;
+            text-align: center;
         }
 
-        .filter-btn.active .count {
-            background-color: rgba(255, 255, 255, 0.2);
+        .filter-btn.active .count,
+        .filter-btn:hover .count { background-color: rgba(255, 255, 255, 0.2); }
+
+        .search-section {
+            margin-bottom: 1.75rem;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.04));
         }
 
-        /* Grille des Cartes Acteurs */
-        .actors-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
+        .search-label {
+            display: block;
+            margin-bottom: 0.65rem;
+            color: #1e40af;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
-        .actor-card {
-            background-color: var(--bg-card);
+        .search-wrapper { position: relative; }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 0.85rem;
+            transform: translateY(-50%);
+            color: var(--primary);
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            min-height: 48px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            outline: none;
+            padding: 0.75rem 2.5rem 0.75rem 2.6rem;
+            background-color: #ffffff;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+        }
+
+        .clear-search {
+            position: absolute;
+            top: 50%;
+            right: 0.65rem;
+            display: none;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .clear-search.visible {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover { background-color: #cbd5e1; color: var(--text-main); }
+
+        .search-help {
+            margin-top: 0.55rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .reset-filters-btn {
+            width: 100%;
+            margin-top: 1rem;
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+            border-radius: 8px;
+            padding: 0.65rem 0.8rem;
+            background-color: white;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
-        .actor-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        .reset-filters-btn:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
         }
 
-        .actor-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-        }
-
-        .actor-card.opposed::before { background-color: var(--color-opposed); }
-        .actor-card.favorable::before { background-color: var(--color-favorable); }
-        .actor-card.neutral::before { background-color: var(--color-neutral); }
-
-        .actor-header {
-            margin-bottom: 1rem;
-        }
-
-        .actor-name {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.25rem;
-        }
-
-        .actor-role {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .actor-body {
-            font-size: 0.95rem;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .actor-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.025em;
-        }
-
-        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
-        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
-        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
-
-        .certitude {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* Modal Détails Acteur */
         .modal {
-            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
             background-color: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
         }
 
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
 
         .modal-content {
-            background-color: var(--bg-card);
-            border-radius: var(--radius);
-            max-width: 600px;
-            width: 100%;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             position: relative;
+            width: 100%;
+            max-width: 600px;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            border-radius: var(--radius);
+            padding: 2rem;
+            background-color: var(--bg-card);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             animation: modalAnim 0.2s ease-out;
         }
 
         @keyframes modalAnim {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .close-modal {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: none;
             border: none;
+            background: none;
+            color: var(--text-muted);
             font-size: 1.5rem;
             cursor: pointer;
-            color: var(--text-muted);
         }
 
-        .modal-field {
-            margin-bottom: 1.25rem;
-        }
+        .modal-field { margin-bottom: 1.25rem; }
 
         .modal-field label {
             display: block;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: 700;
             margin-bottom: 0.25rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        .modal-field p {
-            font-size: 1rem;
-            color: var(--text-main);
+        .modal-title {
+            padding-right: 2rem;
+            font-size: 1.6rem;
+            font-weight: 700;
         }
 
         .modal-verbatim {
-            background-color: var(--bg-primary);
-            padding: 1rem;
             border-left: 4px solid var(--primary);
             border-radius: 4px;
+            padding: 1rem;
+            background-color: var(--bg-primary);
             font-style: italic;
         }
 
-        /* Styles Onglet Griefs */
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .modal-footer .modal-field { margin: 0; }
+        .modal-footer .modal-field:last-child { text-align: right; }
+
         .griefs-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
             gap: 2rem;
         }
 
-        @media (max-width: 640px) {
-            .griefs-container { grid-template-columns: 1fr; }
-        }
-
-        .grief-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 2rem;
-            box-shadow: var(--shadow);
-        }
-
-        .grief-card h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Listes & Sources */
+        .grief-card,
         .list-card {
-            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 2rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
-            margin-bottom: 2rem;
         }
 
-        .list-card h2 {
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
+        .grief-card h2 { margin-bottom: 1rem; color: #0f172a; font-size: 1.3rem; }
+        .list-card { margin-bottom: 2rem; }
+        .list-card h2 { margin-bottom: 1rem; font-size: 1.4rem; }
+        .list-card ul { padding-left: 1.5rem; }
+        .list-card li { margin-bottom: 0.75rem; }
+
+        @media (max-width: 1150px) {
+            .dashboard-layout { grid-template-columns: 280px minmax(0, 1fr); gap: 1.25rem; }
+            .actors-grid { gap: 1rem; }
+            .actor-card { padding: 1.25rem; }
         }
 
-        .list-card ul {
-            padding-left: 1.5rem;
+        @media (max-width: 900px) {
+            body { padding: 1.25rem; }
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .filters-sidebar { grid-row: 1; position: static; }
+            .actors-area { grid-row: 2; }
+            .actors-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .filter-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-        .list-card li {
-            margin-bottom: 0.75rem;
+        @media (max-width: 650px) {
+            body { padding: 1rem; }
+            header h1 { font-size: 1.75rem; }
+            .tab-btn { flex: 1 1 100%; }
+            .actors-grid,
+            .griefs-container,
+            .filter-options { grid-template-columns: 1fr; }
+            .actor-footer,
+            .modal-footer { align-items: flex-start; flex-direction: column; }
+            .certitude,
+            .modal-footer .modal-field:last-child { text-align: left; }
         }
     </style>
 </head>
-<body>
 
+<body>
     <header>
         <h1 id="header-title">Chargement...</h1>
         <p id="header-subtitle"></p>
     </header>
 
-    <nav class="tabs">
-        <button class="tab-btn active" onclick="switchTab('carto', this)">Cartographie des acteurs</button>
-        <button class="tab-btn" onclick="switchTab('griefs', this)">Synthèse des oppostitions</button>
-        <button class="tab-btn" onclick="switchTab('vigilance', this)">Points de vigilance &amp; sources</button>
+    <nav class="tabs" aria-label="Navigation principale">
+        <button class="tab-btn active" type="button" data-tab="carto">Cartographie des acteurs</button>
+        <button class="tab-btn" type="button" data-tab="griefs">Synthèse des oppositions</button>
+        <button class="tab-btn" type="button" data-tab="vigilance">Points de vigilance &amp; sources</button>
     </nav>
 
     <div id="tab-carto" class="tab-content active">
         <div class="dashboard-layout">
-            <aside class="filters-sidebar">
+            <aside class="filters-sidebar" aria-label="Recherche et filtres de la cartographie">
+                <div class="search-section">
+                    <label class="search-label" for="actor-search">Rechercher un acteur</label>
+
+                    <div class="search-wrapper">
+                        <span class="search-icon" aria-hidden="true">🔍</span>
+
+                        <input
+                            id="actor-search"
+                            class="search-input"
+                            type="search"
+                            placeholder="Nom, fonction, argument..."
+                            autocomplete="off"
+                            aria-describedby="search-help"
+                        >
+
+                        <button
+                            id="clear-search"
+                            class="clear-search"
+                            type="button"
+                            aria-label="Effacer la recherche"
+                            title="Effacer la recherche"
+                        >×</button>
+                    </div>
+
+                    <p id="search-help" class="search-help">
+                        Recherche dans le nom, la fonction, la position et les preuves documentaires.
+                    </p>
+                </div>
+
                 <div class="filter-section">
                     <h3>Collèges d'acteurs</h3>
                     <div class="filter-options" id="cat-filters-container"></div>
@@ -425,9 +612,19 @@
                     <h3>Positionnement</h3>
                     <div class="filter-options" id="stance-filters-container"></div>
                 </div>
+
+                <button class="reset-filters-btn" id="reset-filters" type="button">
+                    Réinitialiser la recherche et les filtres
+                </button>
             </aside>
 
-            <main class="actors-grid" id="actors-grid"></main>
+            <main class="actors-area">
+                <div class="results-summary">
+                    <p id="results-count" class="results-count" aria-live="polite"></p>
+                </div>
+
+                <div class="actors-grid" id="actors-grid"></div>
+            </main>
         </div>
     </div>
 
@@ -437,7 +634,7 @@
 
     <div id="tab-vigilance" class="tab-content">
         <div class="list-card">
-            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <h2>🔍 Points de vigilance majeurs</h2>
             <ul id="vigilance-list"></ul>
         </div>
 
@@ -447,31 +644,37 @@
         </div>
     </div>
 
-    <div class="modal" id="actor-modal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-modal" onclick="toggleModal(false)">×</button>
+    <div class="modal" id="actor-modal" role="dialog" aria-modal="true" aria-labelledby="modal-name">
+        <div class="modal-content">
+            <button class="close-modal" id="close-modal" type="button" aria-label="Fermer la fenêtre">×</button>
+
             <div class="modal-field">
                 <label>Nom / Entité</label>
-                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+                <h2 id="modal-name" class="modal-title"></h2>
             </div>
+
             <div class="modal-field">
                 <label>Fonction / Rattachement</label>
                 <p id="modal-role"></p>
             </div>
+
             <div class="modal-field">
-                <label>Positionnement ou Argument Principal</label>
+                <label>Positionnement ou argument principal</label>
                 <p id="modal-position"></p>
             </div>
+
             <div class="modal-field">
                 <label>Verbatim / Preuve documentaire</label>
                 <p id="modal-verbatim" class="modal-verbatim"></p>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                <div class="modal-field" style="margin:0;">
+
+            <div class="modal-footer">
+                <div class="modal-field">
                     <label>Orientation</label>
                     <span id="modal-stance-badge" class="badge"></span>
                 </div>
-                <div class="modal-field" style="margin:0; text-align: right;">
+
+                <div class="modal-field">
                     <label>Niveau de certitude</label>
                     <p id="modal-certainty" class="certitude"></p>
                 </div>
@@ -520,17 +723,16 @@
                 { name: "Conseils de Chalampé, Niffer, Ottmarsheim", category: "elus-fav", stance: "favorable", role: "Assemblées municipales", position: "Approuvent officiellement le projet de data center.", evidence: "Avis favorable à Chalampé et Niffer (à l’unanimité), favorable également à Ottmarsheim.", certainty: "Haute" },
                 { name: "Conseil municipal de Bantzenheim", category: "elus-opp", stance: "opposed", role: "Assemblée municipale", position: "S'oppose au projet par un vote formel.", evidence: "Défavorable à Bantzenheim (quatre pour, onze contre, quatre abstentions).", certainty: "Haute" },
                 { name: "Thierry Stiegler", category: "porteurs", stance: "neutral", role: "Directeur général d'Agora Calycé", position: "Intervient dans le débat public régional sur le sujet.", evidence: "N/A", certainty: "Moyenne" }, 
-                { name: "Cyrielle Chatelain", category: "elus-opp", stance: "opposed", role: "Présidente du groupe Écologiste et Social à l’Assemblée nationale", position: "Apporte un soutien politique national à la mobilisation contre le data center de Petit-Landau et participe aux débats sur ses impacts énergétiques, agricoles, environnementaux et démocratiques.", evidence: "A animé une table ronde lors de la journée d’information et de mobilisation du 19 septembre 2026 à Kingersheim.", certainty: "Haute" },
-                { name: "Antoine Waechter", category: "elus-opp", stance: "opposed", role: "Ancien député européen et représentant du Mouvement écologiste indépendant", position: "Renforce la coalition politique et environnementale opposée au projet en participant à la mobilisation publique organisée par le collectif IA pas moyen.", evidence: "A participé à la table ronde contre le projet aux côtés de Cyrielle Chatelain et Cécile Germain-Ecuer.", certainty: "Haute" },
-                { name: "Corine de Bilbao", category: "porteurs", stance: "favorable", role: "Présidente de Microsoft France selon la ressource", position: "Interlocutrice de l’État lors de la recherche d’un site français et de la relance du projet après des implantations non abouties dans d’autres régions.", evidence: "Olivier Becht indique avoir reçu Corine de Bilbao en 2023 afin de convaincre Microsoft de maintenir son projet en France.", certainty: "Haute" },
-                { name: "Gilbert Stimpflin", category: "porteurs", stance: "favorable", role: "PDG d’Euro Rhein Ports", position: "A proposé à Microsoft le site de Petit-Landau finalement retenu et présente le data center comme un facteur d’attractivité pour les entreprises françaises et allemandes de l’IA et de la robotique.", evidence: "« Un centre de données Microsoft chez nous, c’est une véritable chance, une attractivité incroyable pour la région. »", certainty: "Haute" },
-                { name: "Euro Rhein Ports", category: "porteurs", stance: "favorable", role: "Société propriétaire du foncier des ports de Mulhouse-Rhin", position: "Acteur foncier ayant contribué à proposer à Microsoft la bande de terrain de 36 hectares située à Petit-Landau le long du Rhin.", evidence: "Le site proposé par son PDG Gilbert Stimpflin a été retenu par Microsoft.", certainty: "Haute" }, 
-                { name: "Cécile Germain-Ecuer", category: "elus-opp", stance: "opposed", role: "Conseillère régionale du Grand Est, membre des Écologistes", position: "Demande la suspension du projet et participe à la structuration politique de la mobilisation, notamment lors de la journée d’information organisée le 19 septembre 2026 à Kingersheim.", evidence: "Cécile Germain-Ecuer a animé une table ronde contre le projet avec Cyrielle Chatelain et Antoine Waechter.", certainty: "Haute" },
-                { name: "Collectif IA pas moyen", category: "orgs", stance: "opposed", role: "Collectif citoyen rassemblant quinze associations", position: "Structure une opposition élargie au data center et organise des journées d’information, des ateliers et des mobilisations portant sur l’énergie, l’eau, les terres agricoles, la démocratie et les impacts de l’intelligence artificielle.", evidence: "Le collectif a organisé le 19 septembre 2026 aux Sheds de Kingersheim une journée de mobilisation et d’information largement suivie.", certainty: "Haute" },
-                { name: "Olivier Becht", category: "elus-fav", stance: "favorable", role: "Député du Haut-Rhin et ancien ministre délégué chargé du Commerce extérieur et de l’Attractivité", position: "A joué un rôle d’intermédiation décisif pour maintenir l’investissement en France après les hésitations de Microsoft, puis organiser la rencontre entre l’entreprise et les acteurs économiques et politiques alsaciens.", evidence: "« Ne partez surtout pas, on va vous trouver quelque chose ! On a besoin de datacenters en France. »", certainty: "Haute" },
-                { name: "Laurent Riche", category: "elus-fav", stance: "neutral", role: "Vice-président de Mulhouse Alsace Agglomération chargé du développement économique", position: "Soutient le projet tout en reconnaissant l’incertitude sur les recettes fiscales et le nombre limité d’emplois directs. Négocie des compensations industrielles, sociales et universitaires.", evidence: "Le classement du bâtiment comme entrepôt ou usine modifiera son assiette fiscale ; des formations en IA avec l’Université de Haute-Alsace sont en négociation.", certainty: "Haute" },
-                { name: "Microsoft", category: "porteurs", stance: "favorable", role: "Porteur du projet de data center IA de Petit-Landau et Hombourg", position: "Structure un investissement estimé à 2 milliards d’euros, avec une vente foncière en cours de signature, une instruction administrative attendue début 2027 et une mise en service annoncée à partir de 2029. Le site doit contribuer à une future zone géographique Azure reposant sur trois grands data centers.", evidence: "Microsoft a créé un comité de pilotage et six comités techniques mobilisant 20 à 30 personnes dans plusieurs pays.", certainty: "Haute" },
-                { name: "MRAe Grand Est", category: "orgs", stance: "neutral", role: "Mission régionale d’autorité environnementale du Grand Est", position: "Maintient des réserves sur la profondeur de l’analyse environnementale, malgré l’avis favorable rendu le 24 août 2026 par le commissaire enquêteur.", evidence: "L’évaluation environnementale est décrite comme souffrant d’un manque d’approfondissement des analyses.", certainty: "Haute" }
+                { name: "Cyrielle Chatelain", category: "elus-opp", stance: "opposed", role: "Présidente du groupe Écologiste à l’Assemblée", position: "Apporte un soutien politique national à la mobilisation contre le data center de Petit-Landau.", evidence: "A animé une table ronde lors de la journée d’information et de mobilisation du 19 septembre 2026 à Kingersheim.", certainty: "Haute" },
+                { name: "Antoine Waechter", category: "elus-opp", stance: "opposed", role: "Ancien député européen et représentant du MEI", position: "Renforce la coalition politique et environnementale opposée au projet.", evidence: "A participé à la table ronde contre le projet aux côtés de Cyrielle Chatelain et Cécile Germain-Ecuer.", certainty: "Haute" },
+                { name: "Corine de Bilbao", category: "porteurs", stance: "favorable", role: "Présidente de Microsoft France", position: "Interlocutrice de l’État lors de la recherche d’un site français et de la relance du projet.", evidence: "Olivier Becht indique avoir reçu Corine de Bilbao en 2023 afin de convaincre Microsoft de maintenir son projet en France.", certainty: "Haute" },
+                { name: "Gilbert Stimpflin", category: "porteurs", stance: "favorable", role: "PDG d’Euro Rhein Ports", position: "A proposé à Microsoft le site de Petit-Landau finalement retenu et présente le data center comme un facteur d’attractivité.", evidence: "« Un centre de données Microsoft chez nous, c’est une véritable chance, une attractivité incroyable pour la région. »", certainty: "Haute" },
+                { name: "Euro Rhein Ports", category: "porteurs", stance: "favorable", role: "Société propriétaire du foncier des ports", position: "Acteur foncier ayant contribué à proposer à Microsoft la bande de terrain de 36 hectares.", evidence: "Le site proposé par son PDG Gilbert Stimpflin a été retenu par Microsoft.", certainty: "Haute" }, 
+                { name: "Collectif IA pas moyen", category: "orgs", stance: "opposed", role: "Collectif citoyen rassemblant quinze associations", position: "Structure une opposition élargie au data center et organise des journées d’information.", evidence: "Le collectif a organisé le 19 septembre 2026 aux Sheds de Kingersheim une journée de mobilisation.", certainty: "Haute" },
+                { name: "Olivier Becht", category: "elus-fav", stance: "favorable", role: "Député du Haut-Rhin et ancien ministre", position: "A joué un rôle d’intermédiation décisif pour maintenir l’investissement en France.", evidence: "« Ne partez surtout pas, on va vous trouver quelque chose ! On a besoin de datacenters en France. »", certainty: "Haute" },
+                { name: "Laurent Riche", category: "elus-fav", stance: "neutral", role: "Vice-président de Mulhouse Alsace Agglomération", position: "Soutient le projet tout en reconnaissant l’incertitude sur les recettes fiscales et le nombre d'emplois.", evidence: "Des formations en IA avec l’Université de Haute-Alsace sont en négociation.", certainty: "Haute" },
+                { name: "Microsoft", category: "porteurs", stance: "favorable", role: "Porteur du projet de data center IA", position: "Structure un investissement estimé à 2 milliards d’euros, avec une mise en service annoncée à partir de 2029.", evidence: "Microsoft a créé un comité de pilotage et six comités techniques.", certainty: "Haute" },
+                { name: "MRAe Grand Est", category: "orgs", stance: "neutral", role: "Mission régionale d’autorité environnementale", position: "Maintient des réserves sur la profondeur de l’analyse environnementale.", evidence: "L’évaluation environnementale est décrite comme souffrant d’un manque d’approfondissement des analyses.", certainty: "Haute" }
             ],
             griefs: [
                 { title: "⚡ Surconsommation énergétique & Monopolisation", text: "Le data center consommera jusqu'à 80 % de la consommation électrique actuelle des ménages du Haut-Rhin (1 500 à 1 750 GWh), accaparant virtuellement l'hydroélectricité locale décarbonée." },
@@ -539,11 +741,11 @@
                 { title: "🎭 Vraie fausse démocratie & Usure", text: "L'enquête publique est critiquée comme une 'chambre d'enregistrement' trop complexe et trop courte (1 mois), entraînant un épuisement des forces militantes locales." },
                 { title: "🎨 Impact Culturel de l'IA", text: "Un nouveau front s'ouvre avec les milieux artistiques qui dénoncent la menace de l'IA générative sur les métiers créatifs et la production culturelle." },
                 { title: "⚖️ Dissymétrie Fiscale", text: "Doute croissant sur les véritables retombées économiques et fiscales pour les communes d'accueil, jugées faibles en regard de l'emprise territoriale." }, 
-                { title: "🗳️ Avis favorable malgré une opposition citoyenne majoritaire", text: "Le commissaire enquêteur a rendu un avis favorable le 24 août 2026 alors que 81 % des 636 contributions de particuliers étaient défavorables et que 13 des 14 associations participantes avaient exprimé une opposition." },
-                { title: "🔊 Contrôle acoustique principalement après mise en service", text: "La seule réserve explicite du commissaire enquêteur porte sur la mesure du bruit une fois le site en fonctionnement, avec des mesures correctives si les niveaux constatés sont excessifs." },
-                { title: "💧 Autorisation de pompage à clarifier", text: "Les opposants évoquent une autorisation de pompage dans la nappe phréatique pour alimenter ou compléter le système de refroidissement en circuit fermé, sans que les volumes et conditions d’utilisation soient clairement établis." },
-                { title: "🏗️ Foncier intégral contre engagement industriel progressif", text: "La vente porte sur environ 36 hectares alors que le calendrier industriel, le nombre final de bâtiments et les caractéristiques des phases ultérieures ne sont pas encore complètement stabilisés." },
-                { title: "☁️ Stratégie territoriale Azure élargie", text: "Petit-Landau serait le premier élément d’un triangle de trois grands data centers espacés d’environ 20 kilomètres, ce qui pourrait cumuler les pressions foncières, électriques, hydriques et paysagères à l’échelle du Sud Alsace." }
+                { title: "🗳️ Avis favorable malgré opposition citoyenne", text: "Le commissaire enquêteur a rendu un avis favorable le 24 août 2026 alors que 81 % des 636 contributions de particuliers étaient défavorables et que 13 des 14 associations participantes avaient exprimé une opposition." },
+                { title: "🔊 Contrôle acoustique tardif", text: "La seule réserve explicite du commissaire enquêteur porte sur la mesure du bruit une fois le site en fonctionnement, avec des mesures correctives si les niveaux constatés sont excessifs." },
+                { title: "💧 Autorisation de pompage à clarifier", text: "Les opposants évoquent une autorisation de pompage dans la nappe phréatique pour alimenter ou compléter le système de refroidissement en circuit fermé." },
+                { title: "🏗️ Foncier intégral contre engagement progressif", text: "La vente porte sur environ 36 hectares alors que le calendrier industriel, le nombre final de bâtiments et les caractéristiques des phases ultérieures ne sont pas encore complètement stabilisés." },
+                { title: "☁️ Stratégie territoriale Azure élargie", text: "Petit-Landau serait le premier élément d’un triangle de trois grands data centers espacés d’environ 20 kilomètres, ce qui pourrait cumuler les pressions à l’échelle du Sud Alsace." }
             ],
             vigilance: [
                 "<strong>Évolution réglementaire sur le secret des affaires</strong> : Le blocage européen sur les données environnementales des sites risque de limiter considérablement l'accès citoyen et associatif à l'information réelle sur la pollution et la consommation, en tension avec la convention d'Aarhus.",
@@ -562,12 +764,11 @@
                 "<strong>Identité de Cécile :</strong> La membre du collectif citée uniquement comme Cécile ne doit pas être automatiquement assimilée à Cécile Germain-Ecuer.",
                 "<strong>Relations foncières :</strong> Clarifier les rôles respectifs du SMO et d’Euro Rhein Ports dans la propriété, la gestion et la cession des parcelles.",
                 "<strong>Statut de Thierry Engasser :</strong> Certaines ressources le qualifient d’ancien maire de Hombourg. Sa fonction actuelle doit être vérifiée avant une prochaine mise à jour."
-               
             ],
             sources: [
                 "<strong>Rapport Petit-Landau 24-06-2026.docx</strong> : Recueil d'articles de presse (DNA, France 3, Rue89 Strasbourg, ChannelNews...) et communiqués locaux couvrant l'enquête publique.", 
                 "<strong>Dimanche en Politique (France 3 Alsace)</strong> : Émission de débat confrontant élus et experts sur l'opportunité économique vs le risque environnemental.", 
-                 "<strong>Dernières Nouvelles d’Alsace :</strong> Article du 21 septembre 2026 sur la journée de mobilisation organisée par le collectif IA pas moyen aux Sheds de Kingersheim, réunissant quinze associations et plusieurs responsables écologistes.",
+                "<strong>Dernières Nouvelles d’Alsace :</strong> Article du 21 septembre 2026 sur la journée de mobilisation organisée par le collectif IA pas moyen aux Sheds de Kingersheim, réunissant quinze associations et plusieurs responsables écologistes.",
                 "<strong>L’Usine Nouvelle :</strong> Article du 25 août 2026 retraçant la sélection du site, le rôle d’Olivier Becht, de Corine de Bilbao, de Gilbert Stimpflin et d’Euro Rhein Ports, ainsi que les négociations industrielles et foncières.",
                 "<strong>France 3 Grand Est :</strong> Ressources d’août 2026 relatives à l’avis favorable du commissaire enquêteur, à l’opposition locale, au calendrier envisagé et aux emplois annoncés.",
                 "<strong>La Tribune :</strong> Article du 25 août 2026 documentant l’investissement de 2 milliards d’euros, les 35 hectares, les 1 500 GWh annuels, les 200 emplois directs et la mise en service envisagée à partir de 2029.",
@@ -575,165 +776,288 @@
             ]
         };
 
-        let activeCategory = 'all';
-        let activeStance = 'all';
+        let activeCategory = "all";
+        let activeStance = "all";
+        let searchTerm = "";
+        let lastFocusedElement = null;
 
-        // Initialisation de la page au chargement du DOM
-        document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('header-title').innerText = projectData.meta.title;
-            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
-
-            renderFilters();
-            renderGrid();
-            renderGriefs();
-            renderLists();
-        });
-
-        // Gestion de la commutation d'onglets (this transmis explicitement pour éviter tout gel du navigateur)
-        function switchTab(tabName, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            btn.classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+        function normalizeText(value) {
+            return String(value || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .trim();
         }
 
-        // Rendu dynamique de la barre latérale et calcul automatisé des effectifs
+        function getFilteredActors() {
+            return projectData.actors.filter(actor => {
+                const matchCategory = activeCategory === "all" || actor.category === activeCategory;
+                const matchStance = activeStance === "all" || actor.stance === activeStance;
+                const searchableText = normalizeText([
+                    actor.name,
+                    actor.role,
+                    actor.position,
+                    actor.evidence,
+                    actor.certainty
+                ].join(" "));
+                const matchSearch = searchTerm === "" || searchableText.includes(searchTerm);
+
+                return matchCategory && matchStance && matchSearch;
+            });
+        }
+
         function renderFilters() {
-            const catContainer = document.getElementById('cat-filters-container');
-            const stanceContainer = document.getElementById('stance-filters-container');
-            
-            catContainer.innerHTML = '';
-            stanceContainer.innerHTML = '';
+            const catContainer = document.getElementById("cat-filters-container");
+            const stanceContainer = document.getElementById("stance-filters-container");
 
-            // 1. Filtres Catégories
+            catContainer.innerHTML = "";
+            stanceContainer.innerHTML = "";
+
             Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
-                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
-                const activeClass = key === activeCategory ? 'active' : '';
-                catContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
-                        <span>${label}</span> <span class="count">${count}</span>
-                    </button>
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.category === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeCategory ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeCategory));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
                 `;
+                button.addEventListener("click", () => {
+                    activeCategory = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                catContainer.appendChild(button);
             });
 
-            // 2. Positionnements (Stances)
             Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
-                const activeClass = key === activeStance ? 'active' : '';
-                stanceContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
-                        <span>${label}</span>
-                    </button>
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.stance === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeStance ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeStance));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
                 `;
+                button.addEventListener("click", () => {
+                    activeStance = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                stanceContainer.appendChild(button);
             });
         }
 
-        function setCategoryFilter(category, el) {
-            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            activeCategory = category;
-            renderGrid();
-        }
-
-        function setStanceFilter(stance, el) {
-            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            activeStance = stance;
-            renderGrid();
-        }
-
-        // Rendu dynamique des fiches acteurs filtrées
         function renderGrid() {
-            const grid = document.getElementById('actors-grid');
-            grid.innerHTML = '';
+            const grid = document.getElementById("actors-grid");
+            const resultsCount = document.getElementById("results-count");
+            const filteredActors = getFilteredActors();
 
-            const filteredActors = projectData.actors.filter(actor => {
-                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
-                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
-                return matchCategory && matchStance;
-            });
+            resultsCount.textContent = `${filteredActors.length} acteur${filteredActors.length > 1 ? "s" : ""} affiché${filteredActors.length > 1 ? "s" : ""} sur ${projectData.actors.length}`;
+            grid.innerHTML = "";
 
             if (filteredActors.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        Aucun acteur ne correspond à votre recherche et aux filtres sélectionnés.
+                    </div>
+                `;
                 return;
             }
 
             filteredActors.forEach(actor => {
-                const card = document.createElement('div');
+                const card = document.createElement("article");
                 card.className = `actor-card ${actor.stance}`;
-                card.onclick = () => openActorModal(actor);
+                card.tabIndex = 0;
+                card.setAttribute("role", "button");
+                card.setAttribute("aria-label", `Ouvrir la fiche de ${actor.name}`);
 
                 card.innerHTML = `
-                    <div class="actor-header">
-                        <div class="actor-name">${actor.name}</div>
-                        <div class="actor-role">${actor.role}</div>
+                    <div>
+                        <div class="actor-header">
+                            <div class="actor-name">${actor.name}</div>
+                            <div class="actor-role">${actor.role}</div>
+                        </div>
+
+                        <div class="actor-body">${actor.position}</div>
                     </div>
-                    <div class="actor-body">${actor.position}</div>
+
                     <div class="actor-footer">
-                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
-                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                        <span class="badge ${actor.stance}">
+                            ${projectData.taxonomy.stances[actor.stance]}
+                        </span>
+
+                        <span class="certitude">
+                            Certitude : ${actor.certainty}
+                        </span>
                     </div>
                 `;
+
+                card.addEventListener("click", () => openActorModal(actor));
+                card.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openActorModal(actor);
+                    }
+                });
+
                 grid.appendChild(card);
             });
         }
 
-        // Rendu dynamique de l'onglet 2 (Griefs)
         function renderGriefs() {
-            const container = document.getElementById('griefs-grid');
-            container.innerHTML = '';
+            const container = document.getElementById("griefs-grid");
+            container.innerHTML = "";
 
-            projectData.griefs.forEach(g => {
-                container.innerHTML += `
-                    <div class="grief-card">
-                        <h2>${g.title}</h2>
-                        <p>${g.text}</p>
-                    </div>
+            if (projectData.griefs.length === 0) {
+                container.innerHTML = `<div class="empty-state">Aucun grief formellement identifié dans cette extraction.</div>`;
+                return;
+            }
+
+            projectData.griefs.forEach(grief => {
+                const card = document.createElement("article");
+                card.className = "grief-card";
+                card.innerHTML = `
+                    <h2>${grief.title}</h2>
+                    <p>${grief.text}</p>
                 `;
+                container.appendChild(card);
             });
         }
 
-        // Rendu de l'onglet 3 (Vigilance & Sources) via document.getElementById sécurisé
         function renderLists() {
-            const vigList = document.getElementById('vigilance-list');
-            const srcList = document.getElementById('sources-list');
+            const vigilanceList = document.getElementById("vigilance-list");
+            const sourcesList = document.getElementById("sources-list");
 
-            vigList.innerHTML = '';
-            srcList.innerHTML = '';
+            vigilanceList.innerHTML = "";
+            sourcesList.innerHTML = "";
 
-            projectData.vigilance.forEach(item => {
-                vigList.innerHTML += `<li>${item}</li>`;
-            });
-            projectData.sources.forEach(item => {
-                srcList.innerHTML += `<li>${item}</li>`;
-            });
+            if (projectData.vigilance.length === 0) {
+                vigilanceList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucun point de vigilance identifié.</li>`;
+            } else {
+                projectData.vigilance.forEach(item => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = item;
+                    vigilanceList.appendChild(listItem);
+                });
+            }
+
+            if (projectData.sources.length === 0) {
+                sourcesList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucune source identifiée.</li>`;
+            } else {
+                projectData.sources.forEach(item => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = item;
+                    sourcesList.appendChild(listItem);
+                });
+            }
         }
 
-        // Hydratation et ouverture saine de la fenêtre modale
-        function openActorModal(actor) {
-            document.getElementById('modal-name').innerText = actor.name;
-            document.getElementById('modal-role').innerText = actor.role;
-            document.getElementById('modal-position').innerText = actor.position;
-            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
-            document.getElementById('modal-certainty').innerText = actor.certainty;
+        function switchTab(tabName, button) {
+            document.querySelectorAll(".tab-btn").forEach(tabButton => {
+                tabButton.classList.remove("active");
+            });
 
-            const badge = document.getElementById('modal-stance-badge');
+            document.querySelectorAll(".tab-content").forEach(content => {
+                content.classList.remove("active");
+            });
+
+            button.classList.add("active");
+            document.getElementById(`tab-${tabName}`).classList.add("active");
+        }
+
+        function openActorModal(actor) {
+            lastFocusedElement = document.activeElement;
+
+            document.getElementById("modal-name").textContent = actor.name;
+            document.getElementById("modal-role").textContent = actor.role;
+            document.getElementById("modal-position").textContent = actor.position;
+            document.getElementById("modal-verbatim").textContent = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById("modal-certainty").textContent = actor.certainty;
+
+            const badge = document.getElementById("modal-stance-badge");
             badge.className = `badge ${actor.stance}`;
-            badge.innerText = projectData.taxonomy.stances[actor.stance];
+            badge.textContent = projectData.taxonomy.stances[actor.stance];
 
             toggleModal(true);
         }
 
         function toggleModal(show) {
-            const modal = document.getElementById('actor-modal');
-            modal.classList.toggle('active', show);
-        }
+            const modal = document.getElementById("actor-modal");
+            modal.classList.toggle("active", show);
+            document.body.style.overflow = show ? "hidden" : "";
 
-        function closeModal(event) {
-            if (event.target.id === 'actor-modal') {
-                toggleModal(false);
+            if (show) {
+                document.getElementById("close-modal").focus();
+            } else if (lastFocusedElement) {
+                lastFocusedElement.focus();
             }
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("header-title").textContent = projectData.meta.title;
+            document.getElementById("header-subtitle").textContent = projectData.meta.subtitle;
+
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+
+            document.querySelectorAll(".tab-btn").forEach(button => {
+                button.addEventListener("click", () => switchTab(button.dataset.tab, button));
+            });
+
+            const searchInput = document.getElementById("actor-search");
+            const clearButton = document.getElementById("clear-search");
+
+            searchInput.addEventListener("input", () => {
+                searchTerm = normalizeText(searchInput.value);
+                clearButton.classList.toggle("visible", searchTerm !== "");
+                renderGrid();
+            });
+
+            clearButton.addEventListener("click", () => {
+                searchInput.value = "";
+                searchTerm = "";
+                clearButton.classList.remove("visible");
+                renderGrid();
+                searchInput.focus();
+            });
+
+            document.getElementById("reset-filters").addEventListener("click", () => {
+                activeCategory = "all";
+                activeStance = "all";
+                searchTerm = "";
+                searchInput.value = "";
+                clearButton.classList.remove("visible");
+                renderFilters();
+                renderGrid();
+            });
+
+            document.getElementById("close-modal").addEventListener("click", () => toggleModal(false));
+
+            document.getElementById("actor-modal").addEventListener("click", event => {
+                if (event.target.id === "actor-modal") {
+                    toggleModal(false);
+                }
+            });
+
+            document.addEventListener("keydown", event => {
+                if (event.key === "Escape" && document.getElementById("actor-modal").classList.contains("active")) {
+                    toggleModal(false);
+                }
+            });
+        });
     </script>
 </body>
 </html>
