@@ -180,6 +180,49 @@
             background-color: rgba(255, 255, 255, 0.2);
         }
 
+        /* Barre de recherche latérale */
+.filter-label {
+display: block;
+margin-bottom: 0.75rem;
+color: var(--text-muted);
+font-size: 0.875rem;
+font-weight: 700;
+letter-spacing: 0.05em;
+text-transform: uppercase;
+}
+ 
+.search-input {
+width: 100%;
+padding: 0.75rem 0.9rem;
+border: 1px solid var(--border-color);
+border-radius: 8px;
+outline: none;
+background-color: var(--bg-primary);
+color: var(--text-main);
+font-size: 0.9rem;
+transition: var(--transition);
+}
+ 
+.search-input::placeholder {
+color: var(--text-muted);
+}
+ 
+.search-input:hover {
+border-color: #94a3b8;
+}
+ 
+.search-input:focus {
+background-color: var(--bg-card);
+border-color: var(--primary);
+box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+ 
+/* Supprime la marge sous la dernière section */
+.filters-sidebar .filter-section:last-child {
+margin-bottom: 0;
+}
+``
+
         /* Grille des Cartes Acteurs */
         .actors-grid {
             display: grid;
@@ -415,9 +458,25 @@
 
     <div id="tab-carto" class="tab-content active">
         <div class="dashboard-layout">
-            <aside class="filters-sidebar">
-                <div class="filter-section">
-                    <h3>Collèges d'acteurs</h3>
+            <aside class="filters-sidebar" aria-label="Filtres de la cartographie">
+ 
+<div class="filter-section">
+<label class="filter-label" for="actor-search">
+Recherche
+</label>
+ 
+<input
+id="actor-search"
+class="search-input"
+type="search"
+placeholder="Nom, fonction, argument..."
+autocomplete="off"
+oninput="setSearch(this.value)"
+>
+</div>
+ 
+<div class="filter-section">
+<h3>Collèges d'acteurs</h3>
                     <div class="filter-options" id="cat-filters-container"></div>
                 </div>
 
@@ -564,6 +623,15 @@
 
         let activeCategory = 'all';
         let activeStance = 'all';
+        let searchTerm = '';
+
+        function normalizeText(value) {
+            return String(value || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        }
 
         // Lancement au chargement du DOM
         document.addEventListener("DOMContentLoaded", () => {
@@ -628,17 +696,41 @@
             activeStance = stance;
             renderGrid();
         }
-
+        
+        function setSearch(value) {
+            searchTerm = normalizeText(value);
+            renderGrid();
+}
         // Rendu dynamique des fiches acteurs filtrées
         function renderGrid() {
             const grid = document.getElementById('actors-grid');
             grid.innerHTML = '';
 
             const filteredActors = projectData.actors.filter(actor => {
-                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
-                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
-                return matchCategory && matchStance;
-            });
+const matchCategory =
+activeCategory === 'all' ||
+actor.category === activeCategory;
+ 
+const matchStance =
+activeStance === 'all' ||
+actor.stance === activeStance;
+ 
+const searchableContent = normalizeText([
+actor.name,
+actor.role,
+actor.position,
+actor.evidence,
+actor.certainty,
+projectData.taxonomy.categories[actor.category],
+projectData.taxonomy.stances[actor.stance]
+].join(' '));
+ 
+const matchSearch =
+searchTerm === '' ||
+searchableContent.includes(searchTerm);
+ 
+return matchCategory && matchStance && matchSearch;
+});
 
             if (filteredActors.length === 0) {
                 grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
