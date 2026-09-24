@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
@@ -20,384 +20,103 @@
             --color-neutral-light: #fef3c7;
             
             --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
             --radius: 12px;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
             --transition: all 0.2s ease-in-out;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-primary);
-            color: var(--text-main);
-            line-height: 1.5;
-            padding: 2rem;
-        }
-
-        header {
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1.5rem;
-        }
-
-        header h1 {
-            font-size: 2.25rem;
-            font-weight: 800;
-            color: #0f172a;
-            letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
-        }
-
-        header p {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-primary); color: var(--text-main); line-height: 1.5; padding: 2rem; }
+        button, input { font: inherit; }
+        
+        header { margin-bottom: 2rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; }
+        header h1 { font-size: 2.25rem; font-weight: 800; color: #0f172a; letter-spacing: -0.025em; margin-bottom: 0.5rem; }
+        header p { color: var(--text-muted); font-size: 1.1rem; }
 
         /* Menu Onglets */
-        .tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-
-        .tab-btn {
-            background: none;
-            border: none;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            padding: 0.5rem 1rem;
-            cursor: pointer;
-            border-radius: var(--radius);
-            transition: var(--transition);
-        }
-
-        .tab-btn:hover {
-            background-color: var(--border-color);
-            color: var(--text-main);
-        }
-
-        .tab-btn.active {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        .tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid var(--border-color); padding-bottom: 0.5rem; }
+        .tab-btn { background: none; border: none; font-size: 1rem; font-weight: 600; color: var(--text-muted); padding: 0.5rem 1rem; cursor: pointer; border-radius: var(--radius); transition: var(--transition); }
+        .tab-btn:hover { background-color: var(--border-color); color: var(--text-main); }
+        .tab-btn.active { background-color: var(--primary); color: white; }
+        .tab-content { display: none; animation: fadeIn 0.2s ease-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Interface Cartographie */
-        .dashboard-layout {
-            display: grid;
-            grid-template-columns: 280px 1fr;
-            gap: 2rem;
-            align-items: start;
-        }
+        .dashboard-layout { display: grid; grid-template-columns: 280px 1fr; gap: 2rem; align-items: start; }
+        @media (max-width: 968px) { .dashboard-layout { grid-template-columns: 1fr; } }
 
-        @media (max-width: 968px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
-        }
+        /* Sidebar Filtres & Recherche */
+        .filters-sidebar { background-color: var(--bg-card); padding: 1.5rem; border-radius: var(--radius); border: 1px solid var(--border-color); box-shadow: var(--shadow); position: sticky; top: 2rem; }
+        
+        .search-section { margin-bottom: 1.75rem; border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 10px; padding: 1rem; background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.04)); }
+        .search-label { display: block; margin-bottom: 0.65rem; color: #1e40af; font-size: 0.85rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+        .search-wrapper { position: relative; }
+        .search-icon { position: absolute; top: 50%; left: 0.85rem; transform: translateY(-50%); color: var(--primary); line-height: 1; pointer-events: none; }
+        .search-input { width: 100%; min-height: 48px; border: 2px solid var(--primary); border-radius: 8px; outline: none; padding: 0.75rem 2.5rem 0.75rem 2.6rem; background-color: #ffffff; color: var(--text-main); font-size: 0.9rem; font-weight: 500; transition: var(--transition); }
+        .search-input:focus { border-color: var(--primary-dark); box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18); }
+        .clear-search { position: absolute; top: 50%; right: 0.65rem; display: none; transform: translateY(-50%); width: 28px; height: 28px; border: none; border-radius: 50%; background-color: var(--border-color); color: var(--text-muted); font-size: 1rem; font-weight: 700; cursor: pointer; }
+        .clear-search.visible { display: inline-flex; align-items: center; justify-content: center; }
+        .clear-search:hover { background-color: #cbd5e1; color: var(--text-main); }
+        .reset-filters-btn { width: 100%; margin-top: 1rem; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.65rem 0.8rem; background-color: white; color: var(--text-muted); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: var(--transition); }
+        .reset-filters-btn:hover { border-color: var(--primary); background-color: var(--primary-light); color: var(--primary-dark); }
 
-        /* Sidebar Filtres */
-        .filters-sidebar {
-            background-color: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: var(--radius);
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow);
-            position: sticky;
-            top: 2rem;
-        }
-
-        .filter-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .filter-section h3 {
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
-            margin-bottom: 0.75rem;
-        }
-
-        .filter-options {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filter-btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            padding: 0.6rem 0.8rem;
-            background-color: var(--bg-primary);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            text-align: left;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-main);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-
-        .filter-btn:hover, .filter-btn.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .filter-btn .count {
-            font-size: 0.75rem;
-            background-color: rgba(0, 0, 0, 0.05);
-            padding: 0.1rem 0.4rem;
-            border-radius: 10px;
-        }
-
-        .filter-btn.active .count {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
+        .filter-section { margin-bottom: 1.5rem; }
+        .filter-section h3 { font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.75rem; }
+        .filter-options { display: flex; flex-direction: column; gap: 0.5rem; }
+        .filter-btn { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0.6rem 0.8rem; background-color: var(--bg-primary); border: 1px solid var(--border-color); border-radius: 8px; text-align: left; font-size: 0.9rem; font-weight: 500; color: var(--text-main); cursor: pointer; transition: var(--transition); }
+        .filter-btn:hover, .filter-btn.active { background-color: var(--primary); color: white; border-color: var(--primary); }
+        .filter-btn .count { font-size: 0.75rem; background-color: rgba(0, 0, 0, 0.05); padding: 0.1rem 0.4rem; border-radius: 10px; }
+        .filter-btn.active .count { background-color: rgba(255, 255, 255, 0.2); }
 
         /* Grille des Cartes Acteurs */
-        .actors-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .actor-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
-            cursor: pointer;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-        }
-
-        .actor-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-        }
-
-        .actor-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-        }
-
+        .results-summary { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+        .results-count { color: var(--text-muted); font-size: 0.9rem; font-weight: 600; }
+        .actors-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+        
+        .actor-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); cursor: pointer; transition: var(--transition); position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
+        .actor-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); }
+        .actor-card::before { content: ''; position: absolute; top: 0; left: 0; width: 6px; height: 100%; }
         .actor-card.opposed::before { background-color: var(--color-opposed); }
         .actor-card.favorable::before { background-color: var(--color-favorable); }
         .actor-card.neutral::before { background-color: var(--color-neutral); }
-
-        .actor-header {
-            margin-bottom: 1rem;
-        }
-
-        .actor-name {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.25rem;
-        }
-
-        .actor-role {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .actor-body {
-            font-size: 0.95rem;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .actor-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.025em;
-        }
-
+        
+        .actor-header { margin-bottom: 1rem; }
+        .actor-name { font-size: 1.2rem; font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
+        .actor-role { font-size: 0.875rem; color: var(--text-muted); font-weight: 500; }
+        .actor-body { font-size: 0.95rem; color: var(--text-main); margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .actor-footer { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 0.75rem; font-size: 0.8rem; }
+        
+        .badge { padding: 0.25rem 0.6rem; border-radius: 20px; font-weight: 600; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.025em; }
         .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
         .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
         .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
-
-        .certitude {
-            color: var(--text-muted);
-            font-style: italic;
-        }
+        .certitude { color: var(--text-muted); font-style: italic; }
+        
+        .empty-state { grid-column: 1 / -1; border: 1px dashed var(--border-color); border-radius: var(--radius); padding: 3rem 1.5rem; background-color: var(--bg-card); color: var(--text-muted); font-weight: 500; text-align: center; }
 
         /* Modal Détails Acteur */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
-        }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; justify-content: center; align-items: center; padding: 1rem; }
+        .modal.active { display: flex; }
+        .modal-content { background-color: var(--bg-card); border-radius: var(--radius); max-width: 600px; width: 100%; padding: 2rem; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); position: relative; animation: modalAnim 0.2s ease-out; }
+        @keyframes modalAnim { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .close-modal { position: absolute; top: 1rem; right: 1rem; background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted); }
+        .modal-field { margin-bottom: 1.25rem; }
+        .modal-field label { display: block; font-size: 0.8rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; margin-bottom: 0.25rem; }
+        .modal-field p { font-size: 1rem; color: var(--text-main); }
+        .modal-verbatim { background-color: var(--bg-primary); padding: 1rem; border-left: 4px solid var(--primary); border-radius: 4px; font-style: italic; }
 
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: var(--bg-card);
-            border-radius: var(--radius);
-            max-width: 600px;
-            width: 100%;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-            position: relative;
-            animation: modalAnim 0.2s ease-out;
-        }
-
-        @keyframes modalAnim {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: var(--text-muted);
-        }
-
-        .modal-field {
-            margin-bottom: 1.25rem;
-        }
-
-        .modal-field label {
-            display: block;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-
-        .modal-field p {
-            font-size: 1rem;
-            color: var(--text-main);
-        }
-
-        .modal-verbatim {
-            background-color: var(--bg-primary);
-            padding: 1rem;
-            border-left: 4px solid var(--primary);
-            border-radius: 4px;
-            font-style: italic;
-        }
-
-        /* Styles Onglet Griefs */
-        .griefs-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
-            gap: 2rem;
-        }
-
-        @media (max-width: 640px) {
-            .griefs-container { grid-template-columns: 1fr; }
-        }
-
-        .grief-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 2rem;
-            box-shadow: var(--shadow);
-        }
-
-        .grief-card h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Listes & Sources */
-        .list-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 2rem;
-            box-shadow: var(--shadow);
-            margin-bottom: 2rem;
-        }
-
-        .list-card h2 {
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
-        }
-
-        .list-card ul {
-            padding-left: 1.5rem;
-        }
-
-        .list-card li {
-            margin-bottom: 0.75rem;
-        }
+        /* Styles Onglets 2 & 3 */
+        .griefs-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(450px, 1fr)); gap: 2rem; }
+        @media (max-width: 640px) { .griefs-container { grid-template-columns: 1fr; } }
+        .grief-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); }
+        .grief-card h2 { font-size: 1.3rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+        .list-card { background-color: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 2rem; box-shadow: var(--shadow); margin-bottom: 2rem; }
+        .list-card h2 { margin-bottom: 1rem; font-size: 1.4rem; }
+        .list-card ul { padding-left: 1.5rem; }
+        .list-card li { margin-bottom: 0.75rem; }
     </style>
 </head>
 <body>
@@ -416,40 +135,50 @@
     <div id="tab-carto" class="tab-content active">
         <div class="dashboard-layout">
             <aside class="filters-sidebar">
+                
+                <div class="search-section">
+                    <label class="search-label" for="actor-search">Rechercher un acteur</label>
+                    <div class="search-wrapper">
+                        <span class="search-icon" aria-hidden="true">🔍</span>
+                        <input id="actor-search" class="search-input" type="search" placeholder="Nom, fonction, argument..." autocomplete="off">
+                        <button id="clear-search" class="clear-search" type="button" aria-label="Effacer la recherche">×</button>
+                    </div>
+                </div>
+
                 <div class="filter-section">
                     <h3>Collèges d'acteurs</h3>
-                    <div class="filter-options" id="cat-filters-container">
-                        </div>
+                    <div class="filter-options" id="cat-filters-container"></div>
                 </div>
 
                 <div class="filter-section">
                     <h3>Positionnement</h3>
-                    <div class="filter-options" id="stance-filters-container">
-                        </div>
+                    <div class="filter-options" id="stance-filters-container"></div>
                 </div>
+
+                <button class="reset-filters-btn" id="reset-filters" type="button">Réinitialiser la recherche et les filtres</button>
             </aside>
 
-            <main class="actors-grid" id="actors-grid">
-                </main>
+            <main class="actors-area">
+                <div class="results-summary">
+                    <p id="results-count" class="results-count" aria-live="polite"></p>
+                </div>
+                <div class="actors-grid" id="actors-grid"></div>
+            </main>
         </div>
     </div>
 
     <div id="tab-griefs" class="tab-content">
-        <div class="griefs-container" id="griefs-grid">
-            </div>
+        <div class="griefs-container" id="griefs-grid"></div>
     </div>
 
     <div id="tab-vigilance" class="tab-content">
         <div class="list-card">
             <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
-            <ul id="vigilance-list">
-                </ul>
+            <ul id="vigilance-list"></ul>
         </div>
-
         <div class="list-card">
             <h2>📰 Médias et sources d'investigation répertoriés</h2>
-            <ul id="sources-list">
-                </ul>
+            <ul id="sources-list"></ul>
         </div>
     </div>
 
@@ -486,7 +215,6 @@
     </div>
 
     <script>
-        // Injection de votre base de données automatisée du Bosquel
         const projectData = {
             meta: {
                 title: "Cartographie interactive — Campus numérique et industriel du Bosquel",
@@ -585,7 +313,6 @@
                 { title: "💶 Coût global hors équipements informatiques", text: "Le coût d’infrastructure est estimé entre 15 et 20 milliards d’euros, sans inclure les serveurs, les puces et les autres équipements informatiques, ce qui empêche encore d’établir le coût complet du projet." },
                 { title: "📅 Risque de calendrier irréaliste", text: "Les délais industriels réels comprennent l’autorisation administrative, les recours éventuels, la construction des bâtiments, le raccordement électrique et l’installation des équipements. Les annonces de mise en service très rapide doivent donc être considérées avec prudence." },
                 { title: "🏘️ Retombées territoriales limitées", text: "Environ 400 emplois qualifiés, un fonds de dotation de 10 millions d’euros et un centre communautaire sont annoncés, mais leur ampleur reste limitée au regard des 64 hectares mobilisés, des 1 400 MW demandés et des investissements globaux." }
-                
             ],
             vigilance: [
                 "<strong>Crédibilité et Dimensionnement :</strong> Inquiétudes formalisées (notamment relayées par RTE et Mediacités) sur la surface financière propre de la jeune pousse Sesterce pour assumer un site d'une telle envergure (1 GW), contrastant avec le poids capitalistique écrasant de SoftBank.",
@@ -625,41 +352,64 @@
             ]
         };
 
-        // États globaux des filtres croisés
         let activeCategory = 'all';
         let activeStance = 'all';
+        let searchTerm = '';
 
-        // Initialisation de la page
         document.addEventListener("DOMContentLoaded", () => {
-            // Remplissage des métadonnées dynamiques de l'en-tête
             document.getElementById('header-title').innerText = projectData.meta.title;
             document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
 
-            // Rendu complet des interfaces de l'application
             renderFilters();
             renderGrid();
             renderGriefs();
             renderLists();
+
+            const searchInput = document.getElementById("actor-search");
+            const clearButton = document.getElementById("clear-search");
+
+            searchInput.addEventListener("input", () => {
+                searchTerm = normalizeText(searchInput.value);
+                clearButton.classList.toggle("visible", searchTerm !== "");
+                renderGrid();
+            });
+
+            clearButton.addEventListener("click", () => {
+                searchInput.value = "";
+                searchTerm = "";
+                clearButton.classList.remove("visible");
+                renderGrid();
+                searchInput.focus();
+            });
+
+            document.getElementById("reset-filters").addEventListener("click", () => {
+                activeCategory = "all";
+                activeStance = "all";
+                searchTerm = "";
+                searchInput.value = "";
+                clearButton.classList.remove("visible");
+                renderFilters();
+                renderGrid();
+            });
         });
 
-        // Gestion de la navigation entre onglets
+        function normalizeText(value) {
+            return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        }
+
         function switchTab(tabName) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
             event.target.classList.add('active');
             document.getElementById(`tab-${tabName}`).classList.add('active');
         }
 
-        // Construction dynamique des filtres de la sidebar et calcul des totaux
         function renderFilters() {
             const catContainer = document.getElementById('cat-filters-container');
             const stanceContainer = document.getElementById('stance-filters-container');
-            
             catContainer.innerHTML = '';
             stanceContainer.innerHTML = '';
 
-            // 1. Génération Filtres Catégories
             Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
                 const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
                 const activeClass = key === activeCategory ? 'active' : '';
@@ -670,7 +420,6 @@
                 `;
             });
 
-            // 2. Génération Filtres Positionnements (Stances)
             Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
                 const activeClass = key === activeStance ? 'active' : '';
                 stanceContainer.innerHTML += `
@@ -682,32 +431,34 @@
         }
 
         function setCategoryFilter(category, el) {
-            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
             activeCategory = category;
+            renderFilters();
             renderGrid();
         }
 
         function setStanceFilter(stance, el) {
-            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
             activeStance = stance;
+            renderFilters();
             renderGrid();
         }
 
-        // Rendu dynamique de la grille filtrée des acteurs
         function renderGrid() {
             const grid = document.getElementById('actors-grid');
+            const resultsCount = document.getElementById('results-count');
             grid.innerHTML = '';
 
             const filteredActors = projectData.actors.filter(actor => {
                 const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
                 const matchStance = (activeStance === 'all' || actor.stance === activeStance);
-                return matchCategory && matchStance;
+                const searchableText = normalizeText([actor.name, actor.role, actor.position, actor.evidence, actor.certainty].join(" "));
+                const matchSearch = searchTerm === "" || searchableText.includes(searchTerm);
+                return matchCategory && matchStance && matchSearch;
             });
 
+            resultsCount.textContent = `${filteredActors.length} acteur${filteredActors.length > 1 ? "s" : ""} affiché${filteredActors.length > 1 ? "s" : ""} sur ${projectData.actors.length}`;
+
             if (filteredActors.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                grid.innerHTML = `<div class="empty-state">Aucun acteur ne correspond à votre recherche ou vos filtres.</div>`;
                 return;
             }
 
@@ -715,7 +466,6 @@
                 const card = document.createElement('div');
                 card.className = `actor-card ${actor.stance}`;
                 card.onclick = () => openActorModal(actor);
-
                 card.innerHTML = `
                     <div class="actor-header">
                         <div class="actor-name">${actor.name}</div>
@@ -731,45 +481,32 @@
             });
         }
 
-        // Rendu dynamique des griefs extraits (Onglet 2)
         function renderGriefs() {
             const container = document.getElementById('griefs-grid');
             container.innerHTML = '';
-
             projectData.griefs.forEach(g => {
-                container.innerHTML += `
-                    <div class="grief-card">
-                        <h2>${g.title}</h2>
-                        <p>${g.text}</p>
-                    </div>
-                `;
+                container.innerHTML += `<div class="grief-card"><h2>${g.title}</h2><p>${g.text}</p></div>`;
             });
         }
 
-        // Rendu des listes analytiques (Onglet 3)
         function renderLists() {
             const vigList = document.getElementById('vigilance-list');
             const srcList = document.getElementById('sources-list');
-
             vigList.innerHTML = '';
             srcList.innerHTML = '';
-
             projectData.vigilance.forEach(item => vigList.innerHTML += `<li>${item}</li>`);
             projectData.sources.forEach(item => srcList.innerHTML += `<li>${item}</li>`);
         }
 
-        // Fenêtre modale d'affichage du détail complet
         function openActorModal(actor) {
             document.getElementById('modal-name').innerText = actor.name;
             document.getElementById('modal-role').innerText = actor.role;
             document.getElementById('modal-position').innerText = actor.position;
             document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucune preuve littérale isolée.";
             document.getElementById('modal-certainty').innerText = actor.certainty;
-
             const badge = document.getElementById('modal-stance-badge');
             badge.className = `badge ${actor.stance}`;
             badge.innerText = projectData.taxonomy.stances[actor.stance];
-
             toggleModal(true);
         }
 
@@ -779,9 +516,7 @@
         }
 
         function closeModal(event) {
-            if (event.target.id === 'actor-modal') {
-                toggleModal(false);
-            }
+            if (event.target.id === 'actor-modal') toggleModal(false);
         }
     </script>
 </body>
