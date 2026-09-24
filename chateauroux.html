@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cartographie interactive — Data Center Google Ozans</title>
+
     <style>
         :root {
             --bg-primary: #f8fafc;
@@ -11,15 +12,15 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-            
             --color-opposed: #ef4444;
             --color-opposed-light: #fee2e2;
             --color-favorable: #22c55e;
             --color-favorable-light: #dcfce7;
             --color-neutral: #f59e0b;
             --color-neutral-light: #fef3c7;
-            
             --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
             --radius: 12px;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
             --transition: all 0.2s ease-in-out;
@@ -39,6 +40,11 @@
             padding: 2rem;
         }
 
+        button,
+        input {
+            font: inherit;
+        }
+
         header {
             margin-bottom: 2rem;
             border-bottom: 1px solid var(--border-color);
@@ -46,21 +52,22 @@
         }
 
         header h1 {
+            margin-bottom: 0.5rem;
+            color: #0f172a;
             font-size: 2.25rem;
             font-weight: 800;
-            color: #0f172a;
             letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
         }
 
         header p {
+            max-width: 1100px;
             color: var(--text-muted);
             font-size: 1.1rem;
         }
 
-        /* Menu Onglets */
         .tabs {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-bottom: 2rem;
             border-bottom: 2px solid var(--border-color);
@@ -68,14 +75,14 @@
         }
 
         .tab-btn {
-            background: none;
             border: none;
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+            background: none;
+            color: var(--text-muted);
             font-size: 1rem;
             font-weight: 600;
-            color: var(--text-muted);
-            padding: 0.5rem 1rem;
             cursor: pointer;
-            border-radius: var(--radius);
             transition: var(--transition);
         }
 
@@ -103,41 +110,172 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Interface Cartographie */
         .dashboard-layout {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 310px minmax(0, 1fr);
             gap: 2rem;
             align-items: start;
         }
 
-        @media (max-width: 968px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
+        .actors-area {
+            min-width: 0;
         }
 
-        /* Sidebar Filtres */
-        .filters-sidebar {
-            background-color: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: var(--radius);
+        .results-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 35px;
+            margin-bottom: 1rem;
+        }
+
+        .results-count {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+            min-width: 0;
+        }
+
+        .actor-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            min-height: 220px;
+            overflow: hidden;
             border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.35);
+            outline-offset: 3px;
+        }
+
+        .actor-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header { margin-bottom: 0.75rem; }
+
+        .actor-name {
+            margin-bottom: 0.25rem;
+            overflow-wrap: anywhere;
+            color: #0f172a;
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .actor-role {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .actor-body {
+            display: -webkit-box;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            line-height: 1.4;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+        }
+
+        .actor-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 20px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: right;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 3rem 1.5rem;
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .filters-sidebar {
             position: sticky;
             top: 2rem;
+            min-width: 0;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            background-color: var(--bg-card);
+            box-shadow: var(--shadow);
         }
 
-        .filter-section {
-            margin-bottom: 1.5rem;
-        }
+        .filter-section { margin-bottom: 1.5rem; }
+        .filter-section:last-child { margin-bottom: 0; }
 
         .filter-section h3 {
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
             margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .filter-options {
@@ -150,334 +288,389 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 0.75rem;
             width: 100%;
-            padding: 0.6rem 0.8rem;
-            background-color: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            text-align: left;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
             font-size: 0.9rem;
             font-weight: 500;
-            color: var(--text-main);
+            text-align: left;
             cursor: pointer;
             transition: var(--transition);
         }
 
-        .filter-btn:hover, .filter-btn.active {
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: var(--primary);
             background-color: var(--primary);
             color: white;
-            border-color: var(--primary);
+        }
+
+        .filter-btn:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.25);
+            outline-offset: 2px;
         }
 
         .filter-btn .count {
-            font-size: 0.75rem;
-            background-color: rgba(0, 0, 0, 0.05);
-            padding: 0.1rem 0.4rem;
+            flex: 0 0 auto;
+            min-width: 24px;
             border-radius: 10px;
+            padding: 0.1rem 0.4rem;
+            background-color: rgba(0, 0, 0, 0.06);
+            font-size: 0.75rem;
+            text-align: center;
         }
 
-        .filter-btn.active .count {
-            background-color: rgba(255, 255, 255, 0.2);
+        .filter-btn.active .count,
+        .filter-btn:hover .count { background-color: rgba(255, 255, 255, 0.2); }
+
+        .search-section {
+            margin-bottom: 1.75rem;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.04));
         }
 
-        /* Grille des Cartes Acteurs */
-        .actors-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
+        .search-label {
+            display: block;
+            margin-bottom: 0.65rem;
+            color: #1e40af;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
-        .actor-card {
-            background-color: var(--bg-card);
+        .search-wrapper { position: relative; }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 0.85rem;
+            transform: translateY(-50%);
+            color: var(--primary);
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            min-height: 48px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            outline: none;
+            padding: 0.75rem 2.5rem 0.75rem 2.6rem;
+            background-color: #ffffff;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+        }
+
+        .clear-search {
+            position: absolute;
+            top: 50%;
+            right: 0.65rem;
+            display: none;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .clear-search.visible {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover { background-color: #cbd5e1; color: var(--text-main); }
+
+        .search-help {
+            margin-top: 0.55rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .reset-filters-btn {
+            width: 100%;
+            margin-top: 1rem;
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+            border-radius: 8px;
+            padding: 0.65rem 0.8rem;
+            background-color: white;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
-        .actor-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        .reset-filters-btn:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
         }
 
-        .actor-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-        }
-
-        .actor-card.opposed::before { background-color: var(--color-opposed); }
-        .actor-card.favorable::before { background-color: var(--color-favorable); }
-        .actor-card.neutral::before { background-color: var(--color-neutral); }
-
-        .actor-header {
-            margin-bottom: 1rem;
-        }
-
-        .actor-name {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.25rem;
-        }
-
-        .actor-role {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .actor-body {
-            font-size: 0.95rem;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .actor-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.025em;
-        }
-
-        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
-        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
-        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
-
-        .certitude {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* Modal Détails Acteur */
         .modal {
-            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
             background-color: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
         }
 
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
 
         .modal-content {
-            background-color: var(--bg-card);
-            border-radius: var(--radius);
-            max-width: 600px;
-            width: 100%;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             position: relative;
+            width: 100%;
+            max-width: 600px;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            border-radius: var(--radius);
+            padding: 2rem;
+            background-color: var(--bg-card);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             animation: modalAnim 0.2s ease-out;
         }
 
         @keyframes modalAnim {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .close-modal {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: none;
             border: none;
+            background: none;
+            color: var(--text-muted);
             font-size: 1.5rem;
             cursor: pointer;
-            color: var(--text-muted);
         }
 
-        .modal-field {
-            margin-bottom: 1.25rem;
-        }
+        .modal-field { margin-bottom: 1.25rem; }
 
         .modal-field label {
             display: block;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: 700;
             margin-bottom: 0.25rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        .modal-field p {
-            font-size: 1rem;
-            color: var(--text-main);
+        .modal-title {
+            padding-right: 2rem;
+            font-size: 1.6rem;
+            font-weight: 700;
         }
 
         .modal-verbatim {
-            background-color: var(--bg-primary);
-            padding: 1rem;
             border-left: 4px solid var(--primary);
             border-radius: 4px;
+            padding: 1rem;
+            background-color: var(--bg-primary);
             font-style: italic;
         }
 
-        /* Styles Onglet Griefs */
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .modal-footer .modal-field { margin: 0; }
+        .modal-footer .modal-field:last-child { text-align: right; }
+
         .griefs-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
             gap: 2rem;
         }
 
-        @media (max-width: 640px) {
-            .griefs-container { grid-template-columns: 1fr; }
-        }
-
-        .grief-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 2rem;
-            box-shadow: var(--shadow);
-        }
-
-        .grief-card h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Listes & Sources */
+        .grief-card,
         .list-card {
-            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 2rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
-            margin-bottom: 2rem;
         }
 
-        .list-card h2 {
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
+        .grief-card h2 { margin-bottom: 1rem; color: #0f172a; font-size: 1.3rem; }
+        .list-card { margin-bottom: 2rem; }
+        .list-card h2 { margin-bottom: 1rem; font-size: 1.4rem; }
+        .list-card ul { padding-left: 1.5rem; }
+        .list-card li { margin-bottom: 0.75rem; }
+
+        @media (max-width: 1150px) {
+            .dashboard-layout { grid-template-columns: 280px minmax(0, 1fr); gap: 1.25rem; }
         }
 
-        .list-card ul {
-            padding-left: 1.5rem;
+        @media (max-width: 900px) {
+            body { padding: 1.25rem; }
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .filters-sidebar { grid-row: 1; position: static; }
+            .actors-area { grid-row: 2; }
+            .filter-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-        .list-card li {
-            margin-bottom: 0.75rem;
+        @media (max-width: 650px) {
+            body { padding: 1rem; }
+            header h1 { font-size: 1.75rem; }
+            .tab-btn { flex: 1 1 100%; }
+            .actors-grid { grid-template-columns: 1fr; }
+            .griefs-container,
+            .filter-options { grid-template-columns: 1fr; }
+            .modal-footer { align-items: flex-start; flex-direction: column; }
+            .certitude,
+            .modal-footer .modal-field:last-child { text-align: left; }
         }
     </style>
 </head>
-<body>
 
+<body>
     <header>
         <h1 id="header-title">Chargement...</h1>
         <p id="header-subtitle"></p>
     </header>
 
-    <nav class="tabs">
-        <button class="tab-btn active" onclick="switchTab('carto')">Cartographie des acteurs</button>
-        <button class="tab-btn" onclick="switchTab('griefs')">Synthèse des oppositions</button>
-        <button class="tab-btn" onclick="switchTab('vigilance')">Points de vigilance &amp; sources</button>
+    <nav class="tabs" aria-label="Navigation principale">
+        <button class="tab-btn active" type="button" data-tab="carto">Cartographie des acteurs</button>
+        <button class="tab-btn" type="button" data-tab="griefs">Synthèse des oppositions</button>
+        <button class="tab-btn" type="button" data-tab="vigilance">Points de vigilance &amp; sources</button>
     </nav>
 
     <div id="tab-carto" class="tab-content active">
         <div class="dashboard-layout">
-            <aside class="filters-sidebar">
+            <aside class="filters-sidebar" aria-label="Recherche et filtres de la cartographie">
+                <div class="search-section">
+                    <label class="search-label" for="actor-search">Rechercher un acteur</label>
+
+                    <div class="search-wrapper">
+                        <span class="search-icon" aria-hidden="true">🔍</span>
+
+                        <input
+                            id="actor-search"
+                            class="search-input"
+                            type="search"
+                            placeholder="Nom, fonction, argument..."
+                            autocomplete="off"
+                            aria-describedby="search-help"
+                        >
+
+                        <button
+                            id="clear-search"
+                            class="clear-search"
+                            type="button"
+                            aria-label="Effacer la recherche"
+                            title="Effacer la recherche"
+                        >×</button>
+                    </div>
+
+                    <p id="search-help" class="search-help">
+                        Recherche dans le nom, la fonction, la position et les preuves documentaires.
+                    </p>
+                </div>
+
                 <div class="filter-section">
                     <h3>Collèges d'acteurs</h3>
-                    <div class="filter-options" id="cat-filters-container">
-                        </div>
+                    <div class="filter-options" id="cat-filters-container"></div>
                 </div>
 
                 <div class="filter-section">
                     <h3>Positionnement</h3>
-                    <div class="filter-options" id="stance-filters-container">
-                        </div>
+                    <div class="filter-options" id="stance-filters-container"></div>
                 </div>
+
+                <button class="reset-filters-btn" id="reset-filters" type="button">
+                    Réinitialiser la recherche et les filtres
+                </button>
             </aside>
 
-            <main class="actors-grid" id="actors-grid">
-                </main>
+            <main class="actors-area">
+                <div class="results-summary">
+                    <p id="results-count" class="results-count" aria-live="polite"></p>
+                </div>
+
+                <div class="actors-grid" id="actors-grid"></div>
+            </main>
         </div>
     </div>
 
     <div id="tab-griefs" class="tab-content">
-        <div class="griefs-container" id="griefs-grid">
-            </div>
+        <div class="griefs-container" id="griefs-grid"></div>
     </div>
 
     <div id="tab-vigilance" class="tab-content">
         <div class="list-card">
-            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
-            <ul id="vigilance-list">
-                </ul>
+            <h2>🔍 Points de vigilance majeurs</h2>
+            <ul id="vigilance-list"></ul>
         </div>
 
         <div class="list-card">
             <h2>📰 Médias et sources d'investigation répertoriés</h2>
-            <ul id="sources-list">
-                </ul>
+            <ul id="sources-list"></ul>
         </div>
     </div>
 
-    <div class="modal" id="actor-modal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-modal" onclick="toggleModal(false)">×</button>
+    <div class="modal" id="actor-modal" role="dialog" aria-modal="true" aria-labelledby="modal-name">
+        <div class="modal-content">
+            <button class="close-modal" id="close-modal" type="button" aria-label="Fermer la fenêtre">×</button>
+
             <div class="modal-field">
                 <label>Nom / Entité</label>
-                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+                <h2 id="modal-name" class="modal-title"></h2>
             </div>
+
             <div class="modal-field">
                 <label>Fonction / Rattachement</label>
                 <p id="modal-role"></p>
             </div>
+
             <div class="modal-field">
-                <label>Positionnement ou Argument Principal</label>
+                <label>Positionnement ou argument principal</label>
                 <p id="modal-position"></p>
             </div>
+
             <div class="modal-field">
                 <label>Verbatim / Preuve documentaire</label>
                 <p id="modal-verbatim" class="modal-verbatim"></p>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                <div class="modal-field" style="margin:0;">
+
+            <div class="modal-footer">
+                <div class="modal-field">
                     <label>Orientation</label>
                     <span id="modal-stance-badge" class="badge"></span>
                 </div>
-                <div class="modal-field" style="margin:0; text-align: right;">
+
+                <div class="modal-field">
                     <label>Niveau de certitude</label>
                     <p id="modal-certainty" class="certitude"></p>
                 </div>
@@ -486,10 +679,9 @@
     </div>
 
     <script>
-        // Injection de votre base de données automatisée d'Ozans
         const projectData = {
             meta: {
-                title: "Cartographie interactive — Data center Google — Ozans / Étrechet",
+                title: "Cartographie interactive — Data Center Google Ozans",
                 subtitle: "Projet de campus de centres de données Google de 195 hectares sur la ZAC d’Ozans, soutenu par l'État et l'agglomération, mais confronté à une contestation locale croissante portant sur l'opacité, l'impact hydrique, énergétique et l'artificialisation des sols."
             },
             taxonomy: {
@@ -527,18 +719,18 @@
                 { name: "Emmanuel de Saint Pol", category: "opposants", stance: "opposed", role: "Agriculteur exproprié en 2012", position: "Exprime de la lassitude et un scepticisme face aux projets successifs sur la zone.", evidence: "Témoignage direct lié à une expropriation passée.", certainty: "Moyenne" },
                 { name: "Militant écologiste anonyme", category: "opposants", stance: "opposed", role: "Militant de terrain", position: "Évoque la faiblesse du rapport de force local, la difficulté à mobiliser et le manque d’informations d’Enedis/RTE.", evidence: "Alerte sur l'asymétrie d'information.", certainty: "Faible" },
                 { name: "Gil Avérous", category: "elus-fav", stance: "favorable", role: "Président LR de Châteauroux Métropole", position: "Principal soutien local du projet, qu’il présente comme une chance historique pour le territoire.", evidence: "Considère publiquement le projet comme une « chance historique ».", certainty: "Haute" },
-                { name: "François Bonneau", category: "elus-fav", stance: "favorable", role: "Président socialiste de la Région", position: "Voit dans le projet de data center une « super opportunité » pour la région Centre-Val de Loire.", evidence: "Qualifie le projet de « super opportunité ».", certainty: "Haute" },
-                { name: "Marc Descouraux", category: "elus-fav", stance: "neutral", role: "Maire d’Étrechet", position: "Renvoie vers l’agglomération et indique ne pas avoir d’information précise sur l’avancement du projet.", evidence: "Avoue un manque d'informations précises.", certainty: "Faible" },
+                { name: "François Bonneau", category: "elus-opp", stance: "opposed", role: "Président socialiste de la Région Centre-Val de Loire", position: "Ne soutient plus le projet en l’état et critique son emprise foncière, ses besoins électriques, les nouvelles infrastructures nécessaires ainsi que la dépendance liée au stockage massif de données par une entreprise américaine.", evidence: "« En l’état, je ne le soutiens pas. »", certainty: "Haute" },
+                { name: "Marc Descouraux", category: "elus-fav", stance: "neutral", role: "Ancien maire d’Étrechet", position: "Renvoie vers l’agglomération et indique ne pas avoir d’information précise sur l’avancement du projet.", evidence: "Avoue un manque d'informations précises.", certainty: "Faible" },
                 { name: "Vincent Millan", category: "elus-fav", stance: "neutral", role: "Maire d’Argenton-sur-Creuse", position: "Confirme l’existence d’un projet miroir au Pêchereau, encore très préliminaire.", evidence: "Confirme prudemment les études pour le projet miroir.", certainty: "Moyenne" },
                 { name: "Régis Blanchet", category: "elus-fav", stance: "neutral", role: "Maire de Buzançais", position: "Évoque avec prudence l’entreprise américaine, dans un contexte local de discrétion.", evidence: "Exprime une forte prudence due au secret.", certainty: "Moyenne" },
                 { name: "Thibault Lanxade", category: "elus-fav", stance: "favorable", role: "Préfet de l’Indre", position: "Présenté comme soutien d’une stratégie de redynamisation numérique et industrielle via Indre 2030.", evidence: "Soutien institutionnel et étatique de la préfecture.", certainty: "Haute" },
                 { name: "Nicolas Bouzou", category: "porteurs", stance: "favorable", role: "Économiste, fondateur d’Asterès", position: "Missionné pour imaginer le plan Indre 2030, incluant data centers, giga-factories et robotaxis.", evidence: "Intègre les data centers dans son plan stratégique territorial.", certainty: "Haute" },
                 { name: "Chambre d’agriculture", category: "orgs", stance: "favorable", role: "Organisme consulaire agricole", position: "Acteur mobilisé dans les calculs de Gil Avérous sur la valorisation de la chaleur fatale pour les serres.", evidence: "Associée aux études techniques de valorisation de chaleur fatale.", certainty: "Haute" },
                 { name: "Google", category: "porteurs", stance: "favorable", role: "Porteur industriel du projet", position: "Envisage son premier méga data center exploité en propre sur le territoire français.", evidence: "Entreprise commanditaire principale.", certainty: "Haute" },
-                { name: "Google France", category: "porteurs", stance: "favorable", role: "Filiale nationale", position: "Maître d’ouvrage cité dans la saisine CNDP avec Tricolore Computing, Violet Computing et RTE.", evidence: "Identifiée formellement à la CNDP.", certainty: "Haute" },
+                { name: "Google France", category: "porteurs", stance: "favorable", role: "Filiale nationale de Google et maître d’ouvrage", position: "Poursuit l’étude du premier campus Google exploité en propre en France, mais refuse de commenter le projet ou d’apporter des précisions alors que les interrogations locales s’intensifient.", evidence: "Contacté par l’AFP, Google France n’a pas souhaité faire de commentaire ni donner plus de détails à ce stade.", certainty: "Haute" },
                 { name: "Tricolore Computing", category: "porteurs", stance: "favorable", role: "Filiale immobilière liée à Google", position: "Mentionnée pour l’acquisition potentielle du terrain et agissant comme maître d’ouvrage.", evidence: "Sert de véhicule d'acquisition foncière.", certainty: "Haute" },
                 { name: "Violet Computing", category: "porteurs", stance: "favorable", role: "Filiale administrative liée à Google", position: "Citée formellement comme co-maître d’ouvrage dans la concertation CNDP.", evidence: "Structure administrative impliquée dans le dossier public.", certainty: "Haute" },
-                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire d'infrastructure réseau", position: "Maître d'ouvrage gérant le raccordement 225 kV puis l'aménagement des futures lignes aériennes 400 kV.", evidence: "Acteur technique d'infrastructure énergétique.", certainty: "Haute" },
+                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire du réseau de transport", position: "Prévoit une première liaison souterraine à 225 kV pour 2028-2029, puis des infrastructures aériennes à 400 kV sur plus de dix kilomètres à partir de 2031.", evidence: "Le raccordement comprend une première phase à 225 000 volts puis une seconde phase nécessitant des ouvrages à 400 000 volts.", certainty: "Haute" },
                 { name: "Enedis", category: "porteurs", stance: "neutral", role: "Gestionnaire de distribution", position: "Mentionné par un militant écologiste comme acteur sollicité sans obtenir d’informations précises.", evidence: "Refus de communiquer des données précises constaté sur le terrain.", certainty: "Faible" },
                 { name: "Decknet", category: "porteurs", stance: "favorable", role: "Porteur de projet", position: "Opère un autre projet de data center plus modeste à Buzançais.", evidence: "Présence industrielle parallèle dans le département.", certainty: "Haute" },
                 { name: "Soprema Steel", category: "porteurs", stance: "neutral", role: "Industriel local", position: "Voisin direct présent sur la ZAC d’Ozans, constituant l’un des rares bâtiments industriels existants.", evidence: "Voisin direct sur le site visé.", certainty: "Haute" },
@@ -579,7 +771,7 @@
                 { name: "Bruno Mascle", category: "elus-opp", stance: "opposed", role: "Élu d'opposition (Déols)", position: "S'est prononcé formellement contre la délibération autorisant l'étude de raccordement électrique.", evidence: "Adopté à 49 voix pour et trois voix contre (dont celle de Bruno Mascle).", certainty: "Haute" },
                 { name: "Anne Le Hénanff", category: "elus-fav", stance: "favorable", role: "Ministre déléguée chargée de l'IA", position: "Encourage le déploiement de data centers en France pour des raisons géostratégiques.", evidence: "Implanter des centres de données sur notre sol est une priorité, au service de notre souveraineté numérique.", certainty: "Haute" },
                 { name: "Lénéo", category: "porteurs", stance: "favorable", role: "Start-up (Énergies vertes)", position: "Porte un projet concurrent de centrale biomasse sur la ZAC d'Ozans, ajoutant une pression sur l'eau.", evidence: "Prévoit d'investir près de 60 millions d'euros.", certainty: "Haute" },
-                { name: "Fred Gagnot", category: "opposants", stance: "opposed", role: "Porte-parole, Confédération paysanne", position: "S'oppose fermement à la centrale biomasse en raison de la ponction de 100 000 m3 d'eau et de la paille.", evidence: "L'eau est un bien commun qui doit servir en priorité à l'alimentation.", certainty: "Haute" },
+                { name: "Fred Gagnot", category: "opposants", stance: "opposed", role: "Porte-parole, Confédération paysanne", position: "S'oppose fermement à la centrale biomasse en raison de la ponction de 100 000 m3 d'eau et de la paille.", evidence: "L'eau est un bien commun qui doit servir en priority à l'alimentation.", certainty: "Haute" },
                 { name: "Nicolas Pailloux", category: "orgs", stance: "neutral", role: "Président, Chambre d'agriculture", position: "Reste attentif aux impacts de la centrale biomasse sur l'équilibre du marché de la paille locale.", evidence: "Il faut rester attentif.", certainty: "Haute" },
                 { name: "Alterric (Samuel Moisson)", category: "porteurs", stance: "favorable", role: "Développeur éolien", position: "Utilise la hausse de consommation électrique du data center pour justifier de nouveaux parcs éoliens.", evidence: "Consommation d’électricité va s’accroître [...] de l’installation d’un data center à Châteauroux.", certainty: "Haute" },
                 { name: "Philippe Latombe", category: "elus-opp", stance: "opposed", role: "Député MoDem", position: "Dénonce la dépendance extraterritoriale aux GAFAM et demande un moratoire sur leurs implantations.", evidence: "Le 'kill switch' [...] n'est plus seulement une hypothèse mais une réalité.", certainty: "Haute" },
@@ -588,22 +780,27 @@
                 { name: "Anti", category: "opposants", stance: "opposed", role: "Porte-parole, Le Nuage était sous nos pieds", position: "Dénonce le choix stratégique des Big Tech de s'implanter dans des zones économiquement vulnérables.", evidence: "Stratégie de prédation sur des territoires précarisés.", certainty: "Haute" },
                 { name: "Mehdi Nezzar", category: "elus-opp", stance: "opposed", role: "Maire du Bourget", position: "Incarne une victoire institutionnelle locale en ayant invalidé le permis d'un projet de centre de données.", evidence: "Invalidé le permis de construire accordé à l’entreprise immobilière.", certainty: "Haute" },
                 { name: "Nicolas Celnik", category: "opposants", stance: "opposed", role: "Journaliste et auteur", position: "Analyse et met en perspective les luttes anti-data centers avec d'autres grands combats écologiques.", evidence: "Les mêmes configurations de résistance qu’à Sainte-Soline.", certainty: "Haute" }, 
-                { name: "François Bonneau", category: "elus-opp", stance: "opposed", role: "Président socialiste de la Région Centre-Val de Loire", position: "Ne soutient plus le projet en l’état et critique son emprise foncière, ses besoins électriques, les nouvelles infrastructures nécessaires ainsi que la dépendance liée au stockage massif de données par une entreprise américaine.", evidence: "« En l’état, je ne le soutiens pas. »", certainty: "Haute" },
-                { name: "Gil Avérous", category: "elus-fav", stance: "favorable", role: "Maire de Châteauroux et président de Châteauroux Métropole", position: "Maintient son soutien au projet malgré la démission de cinq élus d’Étrechet, affirme que treize communes sur quatorze y sont favorables et présente le campus comme une opportunité historique susceptible de créer entre 1 200 et 1 500 emplois permanents à terme.", evidence: "« L’objectif, c’est en gros 150 salariés par data center, c’est-à-dire 1 500 salariés à terme. »", certainty: "Haute" },
-                { name: "Ozans dire non", category: "orgs", stance: "opposed", role: "Collectif citoyen opposé au projet Google à Ozans", position: "Élargit sa mobilisation avec une pétition comptant entre 16 000 et plus de 18 000 signatures selon les dates et les sources, et annonce une nouvelle mobilisation publique le 17 octobre 2026.", evidence: "La pétition « Non au méga centre de données de Google à Châteauroux » dépasse désormais largement son niveau initial et réclame l’abandon du projet.", certainty: "Haute" },
-                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire du réseau de transport chargé du raccordement électrique du campus", position: "Prévoit une première liaison souterraine à 225 kV pour la mise en service initiale en 2028-2029, puis des infrastructures aériennes à 400 kV sur plus de dix kilomètres à partir de 2031 pour permettre une puissance finale proche ou supérieure à 500 MW.", evidence: "Le raccordement comprend une première phase à 225 000 volts puis une seconde phase nécessitant des ouvrages à 400 000 volts.", certainty: "Haute" },
-                { name: "Google France", category: "porteurs", stance: "favorable", role: "Filiale nationale de Google et maître d’ouvrage participant à la concertation préalable", position: "Poursuit l’étude du premier campus Google exploité en propre en France, mais refuse de commenter le projet ou d’apporter des précisions alors que les interrogations locales et la crise politique s’intensifient.", evidence: "Contacté par l’AFP, Google France n’a pas souhaité faire de commentaire ni donner plus de détails à ce stade.", certainty: "Haute" }, 
-                { name: "Florence Laurent", category: "elus-opp", stance: "opposed", role: "Maire sans étiquette d’Étrechet jusqu’à sa démission annoncée le 15 septembre 2026", position: "Quitte ses mandats en raison de la prise en compte jugée insuffisante des avis communaux et de l’absence d’engagements précis sur les nuisances visuelles, les PFAS, la dévalorisation des habitations et le trafic routier.", evidence: "« Je suis arrivée à la conclusion que différents éléments de ce projet méritaient un engagement précis de la part des porteurs de projets. »", certainty: "Haute" },
-                { name: "Bruno Deterne", category: "elus-opp", stance: "opposed", role: "Premier adjoint d’Étrechet chargé des finances, démissionnaire", position: "Démissionne de ses fonctions pour dénoncer l’absence de capacité décisionnelle de la commune sur un projet engageant durablement son avenir et ses ressources.", evidence: "La démission collective est présentée comme une décision « conjointe et mûrie » face à un projet hors norme.", certainty: "Haute" },
-                { name: "Marie-Pierre Chabenat-Canals", category: "elus-opp", stance: "opposed", role: "Deuxième adjointe d’Étrechet chargée des affaires scolaires et sociales, démissionnaire", position: "Dénonce l’absence de pouvoir communal, les risques environnementaux, les nuisances, les prélèvements de ressources et la faiblesse potentielle des créations d’emplois.", evidence: "« Nous avons le sentiment d’être dans une réserve indienne sur laquelle on va monter des projets, mais où les habitants n’ont pas leur mot à dire. »", certainty: "Haute" },
-                { name: "Christian Jubard", category: "elus-opp", stance: "opposed", role: "Troisième adjoint d’Étrechet chargé des travaux, démissionnaire", position: "Participe à la démission collective du 10 septembre 2026 en contestant la gouvernance du projet et l’impossibilité pour la commune de réellement l’infléchir.", evidence: "Le communiqué décrit un projet « hors norme qui échappe totalement à toute capacité de décision de la commune ».", certainty: "Haute" },
-                { name: "Sylvie Gessier", category: "elus-opp", stance: "opposed", role: "Conseillère municipale d’Étrechet, démissionnaire", position: "Quitte son mandat avec les trois adjoints pour alerter au-delà d’Étrechet sur l’opacité, les nuisances et l’absence de capacité locale à intervenir sur le dossier.", evidence: "La lettre du 10 septembre 2026 annonce sa démission de l’ensemble de ses fonctions électives.", certainty: "Haute" },
-                { name: "Châteauroux Métropole", category: "porteurs", stance: "favorable", role: "Communauté d’agglomération compétente en matière d’urbanisme et porteuse territoriale de l’opération d’Ozans", position: "A approuvé le projet, autorisé la vente de 195 hectares à Tricolore Computing et conserve l’essentiel du pouvoir de décision territorial, alors que la commune d’Étrechet estime ne disposer d’aucun levier réel.", evidence: "Le conseil communautaire a voté en juin 2025 la vente de 195 hectares de la ZAC d’Ozans à Tricolore Computing.", certainty: "Haute" },
-                { name: "Département de l’Indre", category: "elus-fav", stance: "favorable", role: "Collectivité départementale soutenant l’implantation du campus Google", position: "Soutient le projet avec la préfecture et présente ses retombées économiques comme très importantes pendant les dix à quinze années de chantier puis durant l’exploitation.", evidence: "La préfecture de l’Indre et le Département ont estimé que les retombées du projet seraient « très importantes ».", certainty: "Haute" }
+                { name: "Florence Laurent", category: "elus-opp", stance: "opposed", role: "Ancienne maire sans étiquette d’Étrechet", position: "A quitté ses mandats en raison de la prise en compte jugée insuffisante des avis communaux et de l’absence d’engagements précis.", evidence: "« Je suis arrivée à la conclusion que différents éléments de ce projet méritaient un engagement précis. »", certainty: "Haute" },
+                { name: "Bruno Deterne", category: "elus-opp", stance: "opposed", role: "Ancien premier adjoint d’Étrechet", position: "A démissionné pour dénoncer l’absence de capacité décisionnelle de la commune.", evidence: "Démission collective présentée comme une décision « conjointe et mûrie ».", certainty: "Haute" },
+                { name: "Marie-Pierre Chabenat-Canals", category: "elus-opp", stance: "opposed", role: "Ancienne adjointe d’Étrechet", position: "Dénonce l’absence de pouvoir communal, les risques environnementaux et les prélèvements de ressources.", evidence: "« Nous avons le sentiment d’être dans une réserve indienne. »", certainty: "Haute" },
+                { name: "Christian Jubard", category: "elus-opp", stance: "opposed", role: "Ancien adjoint d’Étrechet", position: "A participé à la démission collective en contestant la gouvernance du projet.", evidence: "Le communiqué décrit un projet « hors norme qui échappe totalement à toute capacité de décision ».", certainty: "Haute" },
+                { name: "Sylvie Gessier", category: "elus-opp", stance: "opposed", role: "Ancienne conseillère d’Étrechet", position: "A alerté sur l’opacité, les nuisances et l’absence de capacité locale à intervenir.", evidence: "A annoncé sa démission de l’ensemble de ses fonctions électives.", certainty: "Haute" },
+                { name: "Châteauroux Métropole", category: "porteurs", stance: "favorable", role: "Communauté d’agglomération", position: "A approuvé le projet, autorisé la vente de 195 hectares et conserve l’essentiel du pouvoir de décision.", evidence: "Le conseil communautaire a voté la vente de 195 hectares.", certainty: "Haute" },
+                { name: "Département de l’Indre", category: "elus-fav", stance: "favorable", role: "Collectivité départementale", position: "Soutient le projet et présente ses retombées économiques comme très importantes.", evidence: "A estimé que les retombées du projet seraient « très importantes ».", certainty: "Haute" }
             ],
             griefs: [
+                { title: "🔒 Opacité / secret des affaires", text: "Grief central : manque criant d’informations techniques, culture de la confidentialité propre à Google et communication jugée parcellaire par les garants de la CNDP." },
+                { title: "🌿 Artificialisation des sols", text: "Forte critique environnementale portant sur les 195 hectares prévus pour le campus de la ZAC d’Ozans, induisant une imperméabilisation massive." },
+                { title: "🌡️ Îlot de chaleur urbain", text: "Crainte d’un impact thermique direct et continu à proximité immédiate de la forêt de Châteauroux et des terres agricoles arables environnantes." },
+                { title: "☣️ PFAS & Refroidissement", text: "Inquiétude aiguë sur les fluides frigorifiques requis pour les architectures de refroidissement par air et les risques afférents de fuites." },
+                { title: "💧 Consommation d’eau", text: "Point d'achoppement sémantique et stratégique majeur dans un département déjà soumis à des épisodes récurrents de stress hydrique." },
+                { title: "⚡ Surcharge électrique", text: "Besoin structurel d'aménager de nouvelles liaisons électriques 225 kV puis 400 kV ; la capacité locale actuelle est jugée saturée par les experts." },
+                { title: "💼 Mirage de l’emploi local", text: "Dénonciation par les économistes et élus du faible ratio d'emplois nets durables créés au regard du foncier et des ressources mobilisés." },
+                { title: "🔒 Souveraineté et Cloud Act", text: "Contestation radicale de l'argument d'indépendance numérique, l'infrastructure étant sous la coupe d'une firme assujettie au droit extraterritorial américain." },
+                { title: "📑 Risque de saucissonnage", text: "Soupçon de morcellement administratif délibéré (via des entités miroirs comme au Pêchereau ou Wissous) visant à contourner l'évaluation globale." },
+                { title: "🔥 Risque d'incendie accru", text: "Inquiétudes modélisées à partir d'autres luttes nationales (projet Cézanne) portant sur les charges thermiques lourdes à proximité d'espaces arborés." },
                 { title: "🏛️ Appel à l'arbitrage régional (Saisine)", text: "Face au blocage et au soutien inébranlable de l'agglomération, les opposants activent le levier de la 'saisine citoyenne' (4000 signatures) pour contraindre le Ceser à instruire le dossier de manière neutre." },
-                { title: "🚰 Concurrence industrielle sur l'eau (Cumul ZAC d'Ozans)", text: "Le projet de centrale biomasse de Lénéo ajoute une consommation de 100 000 mètres cubes d'eau par an sur le même périmètre que Google, exacerbant la tension sur la ressource hydrique régionale." },
+                { title: "🚰 Concurrence industrielle sur l'eau", text: "Le projet de centrale biomasse de Lénéo ajoute une consommation de 100 000 mètres cubes d'eau par an sur le même périmètre que Google, exacerbant la tension sur la ressource hydrique régionale." },
                 { title: "🇺🇸 Souveraineté factice et 'Kill Switch'", text: "La mission de l'Assemblée nationale pointe la forte dépendance aux États-Unis, soulignant que des modèles peuvent être coupés à distance par Washington, vidant l'argument de souveraineté de sa substance." },
                 { title: "🌬️ Effet domino énergétique", text: "La très forte consommation du data center est désormais officiellement utilisée par les promoteurs d'énergies renouvelables comme argument de nécessité pour imposer de nouveaux parcs éoliens dans le département." }, 
                 { title: "🏛️ Crise institutionnelle à Étrechet", text: "La démission de la maire, de ses trois adjoints et d’une conseillère municipale transforme la contestation du projet en crise politique locale majeure et révèle l’absence de pouvoir décisionnel ressentie par la commune d’accueil." },
@@ -611,7 +808,7 @@
                 { title: "👷 Contradiction majeure sur les emplois", text: "Les annonces de 1 200 à 1 500 emplois permanents portées par Gil Avérous s’opposent aux estimations de 50 à 200 emplois pérennes citées par les élus démissionnaires, sans chiffre officiel détaillé communiqué par Google." },
                 { title: "🗳️ Décision intercommunale contre autonomie communale", text: "Le transfert de la compétence d’urbanisme à Châteauroux Métropole et le caractère non contraignant de la concertation alimentent le sentiment qu’un référendum local ou un avis négatif d’Étrechet ne pourraient pas infléchir le projet." },
                 { title: "🏠 Dévalorisation immobilière et trafic routier", text: "Les élus démissionnaires ajoutent aux griefs existants la perte potentielle de valeur des habitations riveraines, les nuisances visuelles et l’augmentation du trafic pendant un chantier annoncé sur dix à quinze ans." }
-            ], 
+            ],
             vigilance: [
                 "<strong>Culture du Secret et Opacité :</strong> Les élus des petites communes, les militants et la CNDP soulignent l'extrême discrétion de Google (agissant via Tricolore/Violet Computing), générant un fort sentiment de développement 'en sous-marin' (rétention d'informations d'Enedis/RTE).",
                 "<strong>Incertitudes Écologiques (PFAS, Eau, Chaleur) :</strong> Le flou technique maintenu sur les systèmes de refroidissement suscite de sérieuses craintes concernant la gestion des fluides frigorifiques, le risque de stress hydrique et la formation d'îlots de chaleur massifs.",
@@ -633,7 +830,6 @@
                 "<strong>Soutien régional :</strong> La fiche de François Bonneau doit être remplacée et non dupliquée, afin de refléter son opposition explicite en l’état.",
                 "<strong>Pétition :</strong> Les totaux de 16 000 et 18 000 signatures correspondent à des dates ou comptages différents. Préférer la formulation « plus de 16 000 signatures » tant qu’un décompte daté n’est pas consolidé.",
                 "<strong>Prix du foncier :</strong> Le montant de 58,5 millions d’euros doit être distingué des investissements industriels, électriques et informatiques du campus."
-                
             ],
             sources: [
                 "<strong>La Nouvelle République :</strong> Source locale centrale sur le projet Google, la concertation, le collectif Ozans dire non et les réactions politiques.",
@@ -659,179 +855,288 @@
             ]
         };
 
-        // États de filtrage croisés
-        let activeCategory = 'all';
-        let activeStance = 'all';
+        let activeCategory = "all";
+        let activeStance = "all";
+        let searchTerm = "";
+        let lastFocusedElement = null;
 
-        // Initialisation de la page
-        document.addEventListener("DOMContentLoaded", () => {
-            // Configuration des titres depuis les méta-données
-            document.getElementById('header-title').innerText = projectData.meta.title;
-            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
-
-            // Rendu complet
-            renderFilters();
-            renderGrid();
-            renderGriefsHTML();
-            renderLists();
-        });
-
-        // Commutation des onglets
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+        function normalizeText(value) {
+            return String(value || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .trim();
         }
 
-        // Rendu dynamique des options de filtrage et effectifs associés
+        function getFilteredActors() {
+            return projectData.actors.filter(actor => {
+                const matchCategory = activeCategory === "all" || actor.category === activeCategory;
+                const matchStance = activeStance === "all" || actor.stance === activeStance;
+                const searchableText = normalizeText([
+                    actor.name,
+                    actor.role,
+                    actor.position,
+                    actor.evidence,
+                    actor.certainty
+                ].join(" "));
+                const matchSearch = searchTerm === "" || searchableText.includes(searchTerm);
+
+                return matchCategory && matchStance && matchSearch;
+            });
+        }
+
         function renderFilters() {
-            const catContainer = document.getElementById('cat-filters-container');
-            const stanceContainer = document.getElementById('stance-filters-container');
-            
-            catContainer.innerHTML = '';
-            stanceContainer.innerHTML = '';
+            const catContainer = document.getElementById("cat-filters-container");
+            const stanceContainer = document.getElementById("stance-filters-container");
 
-            // 1. Catégories d'acteurs
+            catContainer.innerHTML = "";
+            stanceContainer.innerHTML = "";
+
             Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
-                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
-                const activeClass = key === activeCategory ? 'active' : '';
-                catContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
-                        <span>${label}</span> <span class="count">${count}</span>
-                    </button>
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.category === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeCategory ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeCategory));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
                 `;
+                button.addEventListener("click", () => {
+                    activeCategory = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                catContainer.appendChild(button);
             });
 
-            // 2. Positionnements (Stances)
             Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
-                const activeClass = key === activeStance ? 'active' : '';
-                stanceContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
-                        <span>${label}</span>
-                    </button>
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.stance === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeStance ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeStance));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
                 `;
+                button.addEventListener("click", () => {
+                    activeStance = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                stanceContainer.appendChild(button);
             });
         }
 
-        function setCategoryFilter(category, el) {
-            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            activeCategory = category;
-            renderGrid();
-        }
-
-        function setStanceFilter(stance, el) {
-            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            activeStance = stance;
-            renderGrid();
-        }
-
-        // Rendu dynamique de la grille filtrée des acteurs
         function renderGrid() {
-            const grid = document.getElementById('actors-grid');
-            grid.innerHTML = '';
+            const grid = document.getElementById("actors-grid");
+            const resultsCount = document.getElementById("results-count");
+            const filteredActors = getFilteredActors();
 
-            const filteredActors = projectData.actors.filter(actor => {
-                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
-                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
-                return matchCategory && matchStance;
-            });
+            resultsCount.textContent = `${filteredActors.length} acteur${filteredActors.length > 1 ? "s" : ""} affiché${filteredActors.length > 1 ? "s" : ""} sur ${projectData.actors.length}`;
+            grid.innerHTML = "";
 
             if (filteredActors.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        Aucun acteur ne correspond à votre recherche et aux filtres sélectionnés.
+                    </div>
+                `;
                 return;
             }
 
             filteredActors.forEach(actor => {
-                const card = document.createElement('div');
+                const card = document.createElement("article");
                 card.className = `actor-card ${actor.stance}`;
-                card.onclick = () => openActorModal(actor);
+                card.tabIndex = 0;
+                card.setAttribute("role", "button");
+                card.setAttribute("aria-label", `Ouvrir la fiche de ${actor.name}`);
 
                 card.innerHTML = `
-                    <div class="actor-header">
-                        <div class="actor-name">${actor.name}</div>
-                        <div class="actor-role">${actor.role}</div>
+                    <div>
+                        <div class="actor-header">
+                            <div class="actor-name">${actor.name}</div>
+                            <div class="actor-role">${actor.role}</div>
+                        </div>
+
+                        <div class="actor-body">${actor.position}</div>
                     </div>
-                    <div class="actor-body">${actor.position}</div>
+
                     <div class="actor-footer">
-                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
-                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                        <span class="badge ${actor.stance}">
+                            ${projectData.taxonomy.stances[actor.stance]}
+                        </span>
+
+                        <span class="certitude">
+                            Certitude : ${actor.certainty}
+                        </span>
                     </div>
                 `;
+
+                card.addEventListener("click", () => openActorModal(actor));
+                card.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openActorModal(actor);
+                    }
+                });
+
                 grid.appendChild(card);
             });
         }
 
-        // Hydratation de l'onglet 2 (Griefs)
-        function renderGriefsHTML() {
-            const container = document.getElementById('griefs-grid');
-            container.innerHTML = '';
-            
-            // Base de griefs consolidée issue du corpus d'Ozans
-            const explicitGriefs = [
-                { title: "🔒 Opacité / secret des affaires", text: "Grief central : manque criant d’informations techniques, culture de la confidentialité propre à Google et communication jugée parcellaire par les garants de la CNDP." },
-                { title: "🌿 Artificialisation des sols", text: "Forte critique environnementale portant sur les 195 hectares prévus pour le campus de la ZAC d’Ozans, induisant une imperméabilisation massive." },
-                { title: "🌡️ Îlot de chaleur urbain", text: "Crainte d’un impact thermique direct et continu à proximité immédiate de la forêt de Châteauroux et des terres agricoles arables environnantes." },
-                { title: "☣️ PFAS & Refroidissement", text: "Inquiétude aiguë sur les fluides frigorifiques requis pour les architectures de refroidissement par air et les risques afférents de fuites." },
-                { title: "💧 Consommation d’eau", text: "Point d'achoppement sémantique et stratégique majeur dans un département déjà soumis à des épisodes récurrents de stress hydrique." },
-                { title: "⚡ Surcharge électrique", text: "Besoin structurel d'aménager de nouvelles liaisons électriques 225 kV puis 400 kV ; la capacité locale actuelle est jugée saturée par les experts." },
-                { title: "💼 Mirage de l’emploi local", text: "Dénonciation par les économistes et élus du faible ratio d'emplois nets durables créés au regard du foncier et des ressources mobilisés." },
-                { title: "🔒 Souveraineté et Cloud Act", text: "Contestation radicale de l'argument d'indépendance numérique, l'infrastructure étant sous la coupe d'une firme assujettie au droit extraterritorial américain." },
-                { title: "📑 Risque de saucissonnage", text: "Soupçon de morcellement administratif délibéré (via des entités miroirs comme au Pêchereau ou Wissous) visant à contourner l'évaluation globale." },
-                { title: "🔥 Risque d'incendie accru", text: "Inquiétudes modélisées à partir d'autres luttes nationales (projet Cézanne) portant sur les charges thermiques lourdes à proximité d'espaces arborés." }
-            ];
+        function renderGriefs() {
+            const container = document.getElementById("griefs-grid");
+            container.innerHTML = "";
 
-            explicitGriefs.forEach(g => {
-                container.innerHTML += `
-                    <div class="grief-card">
-                        <h2>${g.title}</h2>
-                        <p>${g.text}</p>
-                    </div>
+            if (projectData.griefs.length === 0) {
+                container.innerHTML = `<div class="empty-state">Aucun grief formellement identifié dans cette extraction.</div>`;
+                return;
+            }
+
+            projectData.griefs.forEach(grief => {
+                const card = document.createElement("article");
+                card.className = "grief-card";
+                card.innerHTML = `
+                    <h2>${grief.title}</h2>
+                    <p>${grief.text}</p>
                 `;
+                container.appendChild(card);
             });
         }
 
-       // Hydratation de l'onglet 3 (Listes)
-function renderLists() {
-    const vigList = document.getElementById('vigilance-list');
-    const srcList = document.getElementById('sources-list');
+        function renderLists() {
+            const vigilanceList = document.getElementById("vigilance-list");
+            const sourcesList = document.getElementById("sources-list");
 
-    vigList.innerHTML = '';
-    srcList.innerHTML = '';
+            vigilanceList.innerHTML = "";
+            sourcesList.innerHTML = "";
 
-    // On utilise bien 'vigList' et 'srcList' ici, et non les ID avec tirets
-    projectData.vigilance.forEach(item => vigList.innerHTML += `<li>${item}</li>`);
-    projectData.sources.forEach(item => srcList.innerHTML += `<li>${item}</li>`);
-}
+            if (projectData.vigilance.length === 0) {
+                vigilanceList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucun point de vigilance identifié.</li>`;
+            } else {
+                projectData.vigilance.forEach(item => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = item;
+                    vigilanceList.appendChild(listItem);
+                });
+            }
 
-        // Gestion de la modale d'affichage du détail complet
+            if (projectData.sources.length === 0) {
+                sourcesList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucune source identifiée.</li>`;
+            } else {
+                projectData.sources.forEach(item => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = item;
+                    sourcesList.appendChild(listItem);
+                });
+            }
+        }
+
+        function switchTab(tabName, button) {
+            document.querySelectorAll(".tab-btn").forEach(tabButton => {
+                tabButton.classList.remove("active");
+            });
+
+            document.querySelectorAll(".tab-content").forEach(content => {
+                content.classList.remove("active");
+            });
+
+            button.classList.add("active");
+            document.getElementById(`tab-${tabName}`).classList.add("active");
+        }
+
         function openActorModal(actor) {
-            document.getElementById('modal-name').innerText = actor.name;
-            document.getElementById('modal-role').innerText = actor.role;
-            document.getElementById('modal-position').innerText = actor.position;
-            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucune preuve littérale isolée dans le corpus.";
-            document.getElementById('modal-certainty').innerText = actor.certainty;
+            lastFocusedElement = document.activeElement;
 
-            const badge = document.getElementById('modal-stance-badge');
+            document.getElementById("modal-name").textContent = actor.name;
+            document.getElementById("modal-role").textContent = actor.role;
+            document.getElementById("modal-position").textContent = actor.position;
+            document.getElementById("modal-verbatim").textContent = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById("modal-certainty").textContent = actor.certainty;
+
+            const badge = document.getElementById("modal-stance-badge");
             badge.className = `badge ${actor.stance}`;
-            badge.innerText = projectData.taxonomy.stances[actor.stance];
+            badge.textContent = projectData.taxonomy.stances[actor.stance];
 
             toggleModal(true);
         }
 
         function toggleModal(show) {
-            const modal = document.getElementById('actor-modal');
-            modal.classList.toggle('active', show);
-        }
+            const modal = document.getElementById("actor-modal");
+            modal.classList.toggle("active", show);
+            document.body.style.overflow = show ? "hidden" : "";
 
-        function closeModal(event) {
-            if (event.target.id === 'actor-modal') {
-                toggleModal(false);
+            if (show) {
+                document.getElementById("close-modal").focus();
+            } else if (lastFocusedElement) {
+                lastFocusedElement.focus();
             }
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("header-title").textContent = projectData.meta.title;
+            document.getElementById("header-subtitle").textContent = projectData.meta.subtitle;
+
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+
+            document.querySelectorAll(".tab-btn").forEach(button => {
+                button.addEventListener("click", () => switchTab(button.dataset.tab, button));
+            });
+
+            const searchInput = document.getElementById("actor-search");
+            const clearButton = document.getElementById("clear-search");
+
+            searchInput.addEventListener("input", () => {
+                searchTerm = normalizeText(searchInput.value);
+                clearButton.classList.toggle("visible", searchTerm !== "");
+                renderGrid();
+            });
+
+            clearButton.addEventListener("click", () => {
+                searchInput.value = "";
+                searchTerm = "";
+                clearButton.classList.remove("visible");
+                renderGrid();
+                searchInput.focus();
+            });
+
+            document.getElementById("reset-filters").addEventListener("click", () => {
+                activeCategory = "all";
+                activeStance = "all";
+                searchTerm = "";
+                searchInput.value = "";
+                clearButton.classList.remove("visible");
+                renderFilters();
+                renderGrid();
+            });
+
+            document.getElementById("close-modal").addEventListener("click", () => toggleModal(false));
+
+            document.getElementById("actor-modal").addEventListener("click", event => {
+                if (event.target.id === "actor-modal") {
+                    toggleModal(false);
+                }
+            });
+
+            document.addEventListener("keydown", event => {
+                if (event.key === "Escape" && document.getElementById("actor-modal").classList.contains("active")) {
+                    toggleModal(false);
+                }
+            });
+        });
     </script>
 </body>
 </html>
