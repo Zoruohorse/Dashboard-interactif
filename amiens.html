@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Cartographie interactive — Ligne THT Amiens – Petit-Caux</title>
+
     <style>
         :root {
             --bg-primary: #f8fafc;
@@ -11,17 +13,23 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-            
+
             --color-opposed: #ef4444;
             --color-opposed-light: #fee2e2;
             --color-favorable: #22c55e;
             --color-favorable-light: #dcfce7;
             --color-neutral: #f59e0b;
             --color-neutral-light: #fef3c7;
-            
+
             --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
+
             --radius: 12px;
-            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            --shadow:
+                0 4px 6px -1px rgb(0 0 0 / 0.05),
+                0 2px 4px -2px rgb(0 0 0 / 0.05);
+
             --transition: all 0.2s ease-in-out;
         }
 
@@ -32,11 +40,24 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                Roboto,
+                Helvetica,
+                Arial,
+                sans-serif;
+
             background-color: var(--bg-primary);
             color: var(--text-main);
             line-height: 1.5;
             padding: 2rem;
+        }
+
+        button,
+        input {
+            font: inherit;
         }
 
         header {
@@ -46,21 +67,26 @@
         }
 
         header h1 {
+            margin-bottom: 0.5rem;
+            color: #0f172a;
             font-size: 2.25rem;
             font-weight: 800;
-            color: #0f172a;
             letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
         }
 
         header p {
+            max-width: 1100px;
             color: var(--text-muted);
             font-size: 1.1rem;
         }
 
-        /* Menu Onglets */
+        /* =====================================================
+           ONGLETS
+        ===================================================== */
+
         .tabs {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-bottom: 2rem;
             border-bottom: 2px solid var(--border-color);
@@ -68,14 +94,14 @@
         }
 
         .tab-btn {
-            background: none;
             border: none;
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+            background: none;
+            color: var(--text-muted);
             font-size: 1rem;
             font-weight: 600;
-            color: var(--text-muted);
-            padding: 0.5rem 1rem;
             cursor: pointer;
-            border-radius: var(--radius);
             transition: var(--transition);
         }
 
@@ -99,45 +125,232 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(4px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        /* Interface Cartographie */
+        /* =====================================================
+           INTERFACE PRINCIPALE
+           
+           Les cartes sont dans la première colonne.
+           La barre latérale est dans la seconde colonne.
+        ===================================================== */
+
         .dashboard-layout {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: minmax(0, 1fr) 310px;
             gap: 2rem;
             align-items: start;
         }
 
-        @media (max-width: 968px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
+        /* =====================================================
+           GRILLE DES CARTES
+        ===================================================== */
+
+        .actors-area {
+            min-width: 0;
         }
 
-        /* Sidebar Filtres */
-        .filters-sidebar {
-            background-color: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: var(--radius);
+        .results-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 35px;
+            margin-bottom: 1rem;
+        }
+
+        .results-count {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .actors-grid {
+            display: grid;
+
+            /* Deux cartes exactement par ligne sur grand écran */
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+
+            gap: 1.5rem;
+            align-items: stretch;
+            min-width: 0;
+        }
+
+        .actor-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            min-height: 240px;
+            overflow: hidden;
+
             border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
+
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.35);
+            outline-offset: 3px;
+        }
+
+        .actor-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before {
+            background-color: var(--color-opposed);
+        }
+
+        .actor-card.favorable::before {
+            background-color: var(--color-favorable);
+        }
+
+        .actor-card.neutral::before {
+            background-color: var(--color-neutral);
+        }
+
+        .actor-header {
+            margin-bottom: 1rem;
+        }
+
+        .actor-name {
+            margin-bottom: 0.25rem;
+            overflow-wrap: anywhere;
+            color: #0f172a;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .actor-role {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .actor-body {
+            display: -webkit-box;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            color: var(--text-main);
+            font-size: 0.95rem;
+
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+        }
+
+        .actor-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+
+            font-size: 0.8rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 20px;
+            padding: 0.25rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+        }
+
+        .badge.opposed {
+            background-color: var(--color-opposed-light);
+            color: var(--color-opposed);
+        }
+
+        .badge.favorable {
+            background-color: var(--color-favorable-light);
+            color: var(--color-favorable);
+        }
+
+        .badge.neutral {
+            background-color: var(--color-neutral-light);
+            color: var(--color-neutral);
+        }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: right;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 3rem 1.5rem;
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        /* =====================================================
+           BARRE LATÉRALE À DROITE
+        ===================================================== */
+
+        .filters-sidebar {
             position: sticky;
             top: 2rem;
+            min-width: 0;
+
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+
+            background-color: var(--bg-card);
+            box-shadow: var(--shadow);
         }
 
         .filter-section {
             margin-bottom: 1.5rem;
         }
 
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+
         .filter-section h3 {
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
             margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .filter-options {
@@ -150,187 +363,212 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 0.75rem;
+
             width: 100%;
-            padding: 0.6rem 0.8rem;
-            background-color: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            text-align: left;
+            padding: 0.6rem 0.8rem;
+
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+
             font-size: 0.9rem;
             font-weight: 500;
-            color: var(--text-main);
+            text-align: left;
+
             cursor: pointer;
             transition: var(--transition);
         }
 
-        .filter-btn:hover, .filter-btn.active {
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: var(--primary);
             background-color: var(--primary);
             color: white;
-            border-color: var(--primary);
+        }
+
+        .filter-btn:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.25);
+            outline-offset: 2px;
         }
 
         .filter-btn .count {
-            font-size: 0.75rem;
-            background-color: rgba(0, 0, 0, 0.05);
-            padding: 0.1rem 0.4rem;
+            flex: 0 0 auto;
+            min-width: 24px;
             border-radius: 10px;
+            padding: 0.1rem 0.4rem;
+            background-color: rgba(0, 0, 0, 0.06);
+            font-size: 0.75rem;
+            text-align: center;
         }
 
-        .filter-btn.active .count {
+        .filter-btn.active .count,
+        .filter-btn:hover .count {
             background-color: rgba(255, 255, 255, 0.2);
         }
 
-        /* Barre de recherche latérale */
-.filter-label {
-display: block;
-margin-bottom: 0.75rem;
-color: var(--text-muted);
-font-size: 0.875rem;
-font-weight: 700;
-letter-spacing: 0.05em;
-text-transform: uppercase;
-}
- 
-.search-input {
-width: 100%;
-padding: 0.75rem 0.9rem;
-border: 1px solid var(--border-color);
-border-radius: 8px;
-outline: none;
-background-color: var(--bg-primary);
-color: var(--text-main);
-font-size: 0.9rem;
-transition: var(--transition);
-}
- 
-.search-input::placeholder {
-color: var(--text-muted);
-}
- 
-.search-input:hover {
-border-color: #94a3b8;
-}
- 
-.search-input:focus {
-background-color: var(--bg-card);
-border-color: var(--primary);
-box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
-}
- 
-/* Supprime la marge sous la dernière section */
-.filters-sidebar .filter-section:last-child {
-margin-bottom: 0;
-}
-``
+        /* =====================================================
+           RECHERCHE RENFORCÉE
+        ===================================================== */
 
-        /* Grille des Cartes Acteurs */
-        .actors-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
+        .search-section {
+            margin-bottom: 1.75rem;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+            padding: 1rem;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(59, 130, 246, 0.14),
+                    rgba(59, 130, 246, 0.04)
+                );
         }
 
-        .actor-card {
-            background-color: var(--bg-card);
+        .search-label {
+            display: block;
+            margin-bottom: 0.65rem;
+            color: #1e40af;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 0.85rem;
+            transform: translateY(-50%);
+            color: var(--primary);
+            font-size: 1.1rem;
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            min-height: 48px;
+
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            outline: none;
+            padding: 0.75rem 2.5rem 0.75rem 2.6rem;
+
+            background-color: #ffffff;
+            color: var(--text-main);
+
+            font-size: 0.9rem;
+            font-weight: 500;
+
+            transition: var(--transition);
+        }
+
+        .search-input::placeholder {
+            color: #64748b;
+            opacity: 1;
+        }
+
+        .search-input:hover {
+            border-color: #2563eb;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+        }
+
+        /* Apparence du bouton natif d'effacement */
+        .search-input::-webkit-search-cancel-button {
+            cursor: pointer;
+        }
+
+        .clear-search {
+            position: absolute;
+            top: 50%;
+            right: 0.65rem;
+            display: none;
+            transform: translateY(-50%);
+
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+
+            background-color: var(--border-color);
+            color: var(--text-muted);
+
+            font-size: 1rem;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .clear-search.visible {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover {
+            background-color: #cbd5e1;
+            color: var(--text-main);
+        }
+
+        .search-help {
+            margin-top: 0.55rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .reset-filters-btn {
+            width: 100%;
+            margin-top: 1rem;
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+            border-radius: 8px;
+            padding: 0.65rem 0.8rem;
+
+            background-color: white;
+            color: var(--text-muted);
+
+            font-size: 0.85rem;
+            font-weight: 600;
+
             cursor: pointer;
             transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
-        .actor-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        .reset-filters-btn:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
         }
 
-        .actor-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-        }
+        /* =====================================================
+           MODALE
+        ===================================================== */
 
-        .actor-card.opposed::before { background-color: var(--color-opposed); }
-        .actor-card.favorable::before { background-color: var(--color-favorable); }
-        .actor-card.neutral::before { background-color: var(--color-neutral); }
-
-        .actor-header {
-            margin-bottom: 1rem;
-        }
-
-        .actor-name {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.25rem;
-        }
-
-        .actor-role {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .actor-body {
-            font-size: 0.95rem;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .actor-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.025em;
-        }
-
-        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
-        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
-        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
-
-        .certitude {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* Modal Détails Acteur */
         .modal {
-            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
+            inset: 0;
+            z-index: 1000;
+
+            display: none;
+            align-items: center;
+            justify-content: center;
+
             width: 100%;
             height: 100%;
+            padding: 1rem;
+
             background-color: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
         }
 
         .modal.active {
@@ -338,30 +576,48 @@ margin-bottom: 0;
         }
 
         .modal-content {
-            background-color: var(--bg-card);
-            border-radius: var(--radius);
-            max-width: 600px;
-            width: 100%;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             position: relative;
+            width: 100%;
+            max-width: 600px;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+
+            border-radius: var(--radius);
+            padding: 2rem;
+
+            background-color: var(--bg-card);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+
             animation: modalAnim 0.2s ease-out;
         }
 
         @keyframes modalAnim {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .close-modal {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: none;
+
             border: none;
+            background: none;
+            color: var(--text-muted);
+
             font-size: 1.5rem;
             cursor: pointer;
-            color: var(--text-muted);
+        }
+
+        .close-modal:hover {
+            color: var(--text-main);
         }
 
         .modal-field {
@@ -370,63 +626,88 @@ margin-bottom: 0;
 
         .modal-field label {
             display: block;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: 700;
             margin-bottom: 0.25rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
         .modal-field p {
-            font-size: 1rem;
             color: var(--text-main);
+            font-size: 1rem;
+        }
+
+        .modal-title {
+            padding-right: 2rem;
+            font-size: 1.6rem;
+            font-weight: 700;
         }
 
         .modal-verbatim {
-            background-color: var(--bg-primary);
-            padding: 1rem;
             border-left: 4px solid var(--primary);
             border-radius: 4px;
+            padding: 1rem;
+            background-color: var(--bg-primary);
             font-style: italic;
         }
 
-        /* Styles Onglet Griefs */
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .modal-footer .modal-field {
+            margin: 0;
+        }
+
+        .modal-footer .modal-field:last-child {
+            text-align: right;
+        }
+
+        /* =====================================================
+           ONGLET GRIEFS
+        ===================================================== */
+
         .griefs-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
             gap: 2rem;
         }
 
-        @media (max-width: 640px) {
-            .griefs-container { grid-template-columns: 1fr; }
-        }
-
         .grief-card {
-            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 2rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
         }
 
         .grief-card h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 1rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            margin-bottom: 1rem;
+            color: #0f172a;
+            font-size: 1.3rem;
+            font-weight: 700;
         }
 
-        /* Listes & Sources */
+        /* =====================================================
+           LISTES ET SOURCES
+        ===================================================== */
+
         .list-card {
-            background-color: var(--bg-card);
+            margin-bottom: 2rem;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 2rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
-            margin-bottom: 2rem;
         }
 
         .list-card h2 {
@@ -441,8 +722,106 @@ margin-bottom: 0;
         .list-card li {
             margin-bottom: 0.75rem;
         }
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @media (max-width: 1150px) {
+            .dashboard-layout {
+                grid-template-columns: minmax(0, 1fr) 280px;
+                gap: 1.25rem;
+            }
+
+            /*
+             * On conserve deux cartes tant que l'espace le permet.
+             * Leur largeur minimale est réduite automatiquement.
+             */
+            .actors-grid {
+                gap: 1rem;
+            }
+
+            .actor-card {
+                padding: 1.25rem;
+            }
+        }
+
+        @media (max-width: 900px) {
+            body {
+                padding: 1.25rem;
+            }
+
+            .dashboard-layout {
+                grid-template-columns: 1fr;
+            }
+
+            /*
+             * La sidebar vient au-dessus des cartes sur tablette
+             * et mobile, même si elle est placée après dans le HTML.
+             */
+            .filters-sidebar {
+                grid-row: 1;
+                position: static;
+            }
+
+            .actors-area {
+                grid-row: 2;
+            }
+
+            .actors-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .filter-options {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 650px) {
+            body {
+                padding: 1rem;
+            }
+
+            header h1 {
+                font-size: 1.75rem;
+            }
+
+            header p {
+                font-size: 1rem;
+            }
+
+            .tabs {
+                gap: 0.5rem;
+            }
+
+            .tab-btn {
+                flex: 1 1 100%;
+            }
+
+            .actors-grid,
+            .griefs-container {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-options {
+                grid-template-columns: 1fr;
+            }
+
+            .actor-footer,
+            .modal-footer {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .certitude,
+            .modal-footer .modal-field:last-child {
+                text-align: left;
+            }
+        }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -450,53 +829,154 @@ margin-bottom: 0;
         <p id="header-subtitle"></p>
     </header>
 
-    <nav class="tabs">
-        <button class="tab-btn active" onclick="switchTab('carto', this)">Cartographie des acteurs</button>
-        <button class="tab-btn" onclick="switchTab('griefs', this)">Synthèse des oppositions</button>
-        <button class="tab-btn" onclick="switchTab('vigilance', this)">Points de vigilance &amp; sources</button>
+    <nav class="tabs" aria-label="Navigation principale">
+        <button
+            class="tab-btn active"
+            type="button"
+            onclick="switchTab('carto', this)"
+        >
+            Cartographie des acteurs
+        </button>
+
+        <button
+            class="tab-btn"
+            type="button"
+            onclick="switchTab('griefs', this)"
+        >
+            Synthèse des oppositions
+        </button>
+
+        <button
+            class="tab-btn"
+            type="button"
+            onclick="switchTab('vigilance', this)"
+        >
+            Points de vigilance &amp; sources
+        </button>
     </nav>
+
+    <!-- =====================================================
+         ONGLET CARTOGRAPHIE
+    ====================================================== -->
 
     <div id="tab-carto" class="tab-content active">
         <div class="dashboard-layout">
-            <aside class="filters-sidebar" aria-label="Filtres de la cartographie">
- 
-<div class="filter-section">
-<label class="filter-label" for="actor-search">
-Recherche
-</label>
- 
-<input
-id="actor-search"
-class="search-input"
-type="search"
-placeholder="Nom, fonction, argument..."
-autocomplete="off"
-oninput="setSearch(this.value)"
->
-</div>
- 
-<div class="filter-section">
-<h3>Collèges d'acteurs</h3>
-                    <div class="filter-options" id="cat-filters-container"></div>
+
+            <!-- Les cartes sont volontairement placées en premier -->
+            <main class="actors-area">
+                <div class="results-summary">
+                    <p
+                        id="results-count"
+                        class="results-count"
+                        aria-live="polite"
+                    ></p>
+                </div>
+
+                <div
+                    class="actors-grid"
+                    id="actors-grid"
+                ></div>
+            </main>
+
+            <!-- Barre latérale placée à droite -->
+            <aside
+                class="filters-sidebar"
+                aria-label="Recherche et filtres de la cartographie"
+            >
+                <div class="search-section">
+                    <label
+                        class="search-label"
+                        for="actor-search"
+                    >
+                        Rechercher un acteur
+                    </label>
+
+                    <div class="search-wrapper">
+                        <span
+                            class="search-icon"
+                            aria-hidden="true"
+                        >
+                            🔍
+                        </span>
+
+                        <input
+                            id="actor-search"
+                            class="search-input"
+                            type="search"
+                            placeholder="Nom, fonction, argument..."
+                            autocomplete="off"
+                            aria-describedby="search-help"
+                            oninput="setSearch(this.value)"
+                        >
+
+                        <button
+                            id="clear-search"
+                            class="clear-search"
+                            type="button"
+                            aria-label="Effacer la recherche"
+                            title="Effacer la recherche"
+                            onclick="clearSearch()"
+                        >
+                            ×
+                        </button>
+                    </div>
+
+                    <p
+                        id="search-help"
+                        class="search-help"
+                    >
+                        Recherche dans le nom, la fonction, la position et les preuves documentaires.
+                    </p>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Collèges d'acteurs</h3>
+
+                    <div
+                        class="filter-options"
+                        id="cat-filters-container"
+                    ></div>
                 </div>
 
                 <div class="filter-section">
                     <h3>Positionnement</h3>
-                    <div class="filter-options" id="stance-filters-container"></div>
+
+                    <div
+                        class="filter-options"
+                        id="stance-filters-container"
+                    ></div>
                 </div>
+
+                <button
+                    class="reset-filters-btn"
+                    type="button"
+                    onclick="resetAllFilters()"
+                >
+                    Réinitialiser la recherche et les filtres
+                </button>
             </aside>
 
-            <main class="actors-grid" id="actors-grid"></main>
         </div>
     </div>
 
+    <!-- =====================================================
+         ONGLET GRIEFS
+    ====================================================== -->
+
     <div id="tab-griefs" class="tab-content">
-        <div class="griefs-container" id="griefs-grid"></div>
+        <div
+            class="griefs-container"
+            id="griefs-grid"
+        ></div>
     </div>
+
+    <!-- =====================================================
+         ONGLET VIGILANCE ET SOURCES
+    ====================================================== -->
 
     <div id="tab-vigilance" class="tab-content">
         <div class="list-card">
-            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
+            <h2>🔍 Points de vigilance majeurs</h2>
             <ul id="vigilance-list"></ul>
         </div>
 
@@ -506,137 +986,470 @@ oninput="setSearch(this.value)"
         </div>
     </div>
 
-    <div class="modal" id="actor-modal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-modal" onclick="toggleModal(false)">×</button>
+    <!-- =====================================================
+         MODALE
+    ====================================================== -->
+
+    <div
+        class="modal"
+        id="actor-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-name"
+        onclick="closeModal(event)"
+    >
+        <div
+            class="modal-content"
+            onclick="event.stopPropagation()"
+        >
+            <button
+                class="close-modal"
+                type="button"
+                aria-label="Fermer la fenêtre"
+                onclick="toggleModal(false)"
+            >
+                ×
+            </button>
+
             <div class="modal-field">
                 <label>Nom / Entité</label>
-                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+                <h2
+                    id="modal-name"
+                    class="modal-title"
+                ></h2>
             </div>
+
             <div class="modal-field">
                 <label>Fonction / Rattachement</label>
                 <p id="modal-role"></p>
             </div>
+
             <div class="modal-field">
-                <label>Positionnement ou Argument Principal</label>
+                <label>Positionnement ou argument principal</label>
                 <p id="modal-position"></p>
             </div>
+
             <div class="modal-field">
                 <label>Verbatim / Preuve documentaire</label>
-                <p id="modal-verbatim" class="modal-verbatim"></p>
+
+                <p
+                    id="modal-verbatim"
+                    class="modal-verbatim"
+                ></p>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                <div class="modal-field" style="margin:0;">
+
+            <div class="modal-footer">
+                <div class="modal-field">
                     <label>Orientation</label>
-                    <span id="modal-stance-badge" class="badge"></span>
+
+                    <span
+                        id="modal-stance-badge"
+                        class="badge"
+                    ></span>
                 </div>
-                <div class="modal-field" style="margin:0; text-align: right;">
+
+                <div class="modal-field">
                     <label>Niveau de certitude</label>
-                    <p id="modal-certainty" class="certitude"></p>
+
+                    <p
+                        id="modal-certainty"
+                        class="certitude"
+                    ></p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
+        /*
+         * Conservez ici votre objet projectData complet.
+         * Il n'est pas nécessaire de modifier vos tableaux actors,
+         * griefs, vigilance et sources.
+         */
+
         const projectData = {
             meta: {
                 title: "Cartographie interactive — Ligne THT Amiens – Petit-Caux",
                 subtitle: "Projet de nouvelle ligne électrique 400 kV porté par RTE pour relier l'EPR2 de Penly et les parcs éoliens au réseau national. Le tracé suscite une forte opposition locale, notamment face à la traversée de la forêt d'Eu et aux impacts agricoles et paysagers."
             },
+
             taxonomy: {
                 categories: {
-                    "all": "Tous les acteurs",
-                    "opposants": "Opposants & Experts",
+                    all: "Tous les acteurs",
+                    opposants: "Opposants & Experts",
                     "elus-opp": "Élus Opposés/Critiques",
                     "elus-fav": "Élus Favorables/Prudents",
-                    "orgs": "Orgs & Collectifs",
-                    "porteurs": "Porteurs & Économie"
+                    orgs: "Orgs & Collectifs",
+                    porteurs: "Porteurs & Économie"
                 },
+
                 stances: {
-                    "all": "Toutes les positions",
-                    "opposed": "Opposé / Critique",
-                    "favorable": "Favorable / Soutien",
-                    "neutral": "Prudent / Ambigü"
+                    all: "Toutes les positions",
+                    opposed: "Opposé / Critique",
+                    favorable: "Favorable / Soutien",
+                    neutral: "Prudent / Ambigu"
                 }
             },
+
+            /*
+             * Remettez ici, sans modification, l'intégralité
+             * du tableau actors de votre code.
+             */
             actors: [
-                { name: "Stop THT 76-80", category: "orgs", stance: "opposed", role: "Association / collectif citoyen", position: "Principal mouvement opposé au projet ; organise les mobilisations et avance des recours juridiques.", evidence: "Centralise la contestation locale contre les impacts environnementaux et paysagers.", certainty: "Haute" },
-                { name: "Associations nationales de défense de l’environnement", category: "orgs", stance: "opposed", role: "Réseau associatif", position: "Soutien annoncé à Stop THT 76-80, bien qu'aucune organisation nationale ne soit nommément identifiée.", evidence: "Apportent une légitimité nationale à la lutte locale.", certainty: "Moyenne" },
-                { name: "Sylvain Finet", category: "opposants", stance: "opposed", role: "Président de Stop THT 76-80", position: "Conteste la justification énergétique du projet, ses impacts environnementaux et annonce des recours juridiques.", evidence: "Figure de proue de l'opposition associative.", certainty: "Haute" },
-                { name: "Francine Adam", category: "opposants", stance: "opposed", role: "Riveraine de Touffreville-sur-Eu", position: "Opposée au passage de la ligne près de son habitation, dénonce la perte de valeur immobilière et l’abattage d’arbres.", evidence: "Témoignage direct sur la dégradation du cadre de vie.", certainty: "Haute" },
-                { name: "José Adam", category: "opposants", stance: "opposed", role: "Riverain de Touffreville-sur-Eu", position: "Opposé au projet, refuse la ligne de manière ferme.", evidence: "Témoignage d'opposition locale directe.", certainty: "Haute" },
-                { name: "Mathieu Massy", category: "opposants", stance: "opposed", role: "Agriculteur", position: "Opposé au projet sur son exploitation ; refuse les implantations de pylônes sur ses terres.", evidence: "Représente la fronde des exploitants directement impactés.", certainty: "Haute" },
-                { name: "Reynald Massy", category: "opposants", stance: "opposed", role: "Éleveur", position: "Craint les impacts sur l’élevage et la suppression d’un bosquet protecteur.", evidence: "Inquiétudes liées au bien-être animal et à l'écosystème local.", certainty: "Haute" },
-                { name: "Christine Rodier", category: "elus-opp", stance: "opposed", role: "Maire de Millebosc", position: "Opposée au tracé traversant la forêt d’Eu et critique fermement la destruction forestière induite.", evidence: "Opposition municipale officielle justifiée par la défense du patrimoine naturel.", certainty: "Haute" },
-                { name: "Rollon Mouchel-Blaisot", category: "elus-fav", stance: "favorable", role: "Préfet de la Somme", position: "Position institutionnelle ; reconnaît les nuisances mais défend le projet comme une nécessité nationale.", evidence: "Assume le portage de l'intérêt supérieur de l'État.", certainty: "Haute" },
-                { name: "Emmanuel Moulard", category: "elus-fav", stance: "neutral", role: "Secrétaire général de la préfecture de la Somme", position: "Présente les dispositifs d’accompagnement et d’indemnisation.", evidence: "Gère le volet administratif et compensatoire du dossier.", certainty: "Haute" },
-                { name: "Maire de Touffreville-sur-Eu", category: "elus-fav", stance: "neutral", role: "Édile local", position: "Cité lors de visites de RTE, sans position tranchée publiquement exprimée dans le corpus.", evidence: "Présence institutionnelle sans prise de position explicite.", certainty: "Faible" },
-                { name: "FDSEA 80", category: "orgs", stance: "neutral", role: "Syndicat agricole (Somme)", position: "Défend les agriculteurs concernés ; exige une meilleure indemnisation sans s'opposer frontalement au principe de la ligne.", evidence: "Pression syndicale ciblée sur les compensations financières.", certainty: "Haute" },
-                { name: "FDSEA Seine-Maritime", category: "orgs", stance: "neutral", role: "Syndicat agricole (Seine-Maritime)", position: "Impliqué activement dans les négociations avec RTE sur les compensations liées aux servitudes.", evidence: "Défense des intérêts fontiers des exploitants.", certainty: "Haute" },
-                { name: "JA 80", category: "orgs", stance: "neutral", role: "Jeunes Agriculteurs (Somme)", position: "Contestent vivement les barèmes de compensations proposés pour la perte de valeur des terres.", evidence: "Alerte sur la pérennité économique des jeunes exploitations.", certainty: "Haute" },
-                { name: "FNSEA 76", category: "orgs", stance: "neutral", role: "Syndicat agricole majoritaire", position: "Revendique une bien meilleure prise en compte des préjudices d'exploitation.", evidence: "Relais institutionnel de la grogne des propriétaires terriens.", certainty: "Haute" },
-                { name: "Chambre d’agriculture de la Somme", category: "orgs", stance: "neutral", role: "Institution consulaire", position: "Partie prenante des discussions officielles et garant de la défense des intérêts agricoles.", evidence: "Cadre de négociation institutionnelle.", certainty: "Haute" },
-                { name: "Propriétaires ruraux / PPR", category: "orgs", stance: "neutral", role: "Organisation foncière", position: "Représente les intérêts des propriétaires terriens dans les négociations sur les servitudes et la perte de chance économique.", evidence: "Défense de la valeur du capital foncier.", certainty: "Haute" },
-                { name: "CGB 80", category: "orgs", stance: "neutral", role: "Syndicat betteravier", position: "Intervient sur les impacts logistiques lourds (engins agricoles) et les contraintes d’exploitation créées par les pylônes.", evidence: "Point de vigilance technique et logistique agricole.", certainty: "Haute" },
-                { name: "RTE", category: "porteurs", stance: "favorable", role: "Gestionnaire du réseau de transport", position: "Porteur principal, défend le projet comme indispensable à la transition énergétique et au raccordement (EPR2, éolien).", evidence: "Maître d'ouvrage défendant l'utilité publique de la ligne.", certainty: "Haute" },
-                { name: "Enedis", category: "porteurs", stance: "neutral", role: "Gestionnaire du réseau de distribution", position: "Co-porteur technique de certaines infrastructures de distribution associées au projet global.", evidence: "Partenaire technique du réseau.", certainty: "Haute" },
-                { name: "EDF", category: "porteurs", stance: "favorable", role: "Groupe énergétique", position: "Maison mère de RTE et opérateur des réacteurs (EPR2 Penly), bénéficiaire indirect de l'infrastructure.", evidence: "Lien structurel avec les besoins de raccordement nucléaire.", certainty: "Haute" },
-                { name: "Préfecture de la Somme", category: "orgs", stance: "neutral", role: "Représentation de l'État", position: "Assure le pilotage administratif et encadre le volet indemnitaire du dossier.", evidence: "Instance de régulation et de validation des DUP.", certainty: "Haute" },
-                { name: "Préfecture de Seine-Maritime", category: "orgs", stance: "neutral", role: "Représentation de l'État", position: "Pilote les procédures administratives liées à l'implantation du projet sur son département.", evidence: "Cadrage légal et administratif.", certainty: "Haute" },
-                { name: "Autorité environnementale", category: "orgs", stance: "neutral", role: "Instance de contrôle", position: "Chargée d’émettre un avis environnemental indépendant sur les destructions et mesures compensatoires.", evidence: "Acteur clé dans l'évaluation des impacts sur la Forêt d'Eu.", certainty: "Haute" },
-                { name: "Commission indépendante d’indemnisation", category: "orgs", stance: "neutral", role: "Instance d'évaluation", position: "Chargée d’évaluer objectivement les préjudices fonciers et agricoles liés à l'implantation des pylônes.", evidence: "Arbitre des tensions financières entre RTE et les syndicats.", certainty: "Haute" },
-                { name: "CNDP", category: "orgs", stance: "neutral", role: "Commission nationale du débat public", position: "Garante de l'organisation et de la transparence de la concertation publique préalable.", evidence: "Encadre le recueil des avis citoyens.", certainty: "Haute" },
-                { name: "Commission d’enquête publique", category: "orgs", stance: "neutral", role: "Instance de consultation", position: "Chargée de recueillir formellement les avis du public et d'émettre un rapport de synthèse.", evidence: "Validation juridique et démocratique de l'étude d'impact.", certainty: "Haute" },
-                { name: "Cyril Wagner", category: "porteurs", stance: "favorable", role: "Directeur adjoint ingénierie RTE Hauts-de-France", position: "Défend le caractère absolument indispensable du projet face à l'obsolescence du réseau ou aux nouveaux besoins.", evidence: "Porte-parole technique rassurant sur l'utilité du projet.", certainty: "Haute" },
-                { name: "Eiffage", category: "porteurs", stance: "neutral", role: "Groupe de travaux publics", position: "Entreprise mentionnée par des opposants dans le cadre des chantiers préparatoires ou travaux associés.", evidence: "Cité comme sous-traitant opérationnel.", certainty: "Faible" }
+                {
+                    name: "Stop THT 76-80",
+                    category: "orgs",
+                    stance: "opposed",
+                    role: "Association / collectif citoyen",
+                    position: "Principal mouvement opposé au projet ; organise les mobilisations et avance des recours juridiques.",
+                    evidence: "Centralise la contestation locale contre les impacts environnementaux et paysagers.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Associations nationales de défense de l’environnement",
+                    category: "orgs",
+                    stance: "opposed",
+                    role: "Réseau associatif",
+                    position: "Soutien annoncé à Stop THT 76-80, bien qu'aucune organisation nationale ne soit nommément identifiée.",
+                    evidence: "Apportent une légitimité nationale à la lutte locale.",
+                    certainty: "Moyenne"
+                },
+                {
+                    name: "Sylvain Finet",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Président de Stop THT 76-80",
+                    position: "Conteste la justification énergétique du projet, ses impacts environnementaux et annonce des recours juridiques.",
+                    evidence: "Figure de proue de l'opposition associative.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Francine Adam",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Riveraine de Touffreville-sur-Eu",
+                    position: "Opposée au passage de la ligne près de son habitation, dénonce la perte de valeur immobilière et l’abattage d’arbres.",
+                    evidence: "Témoignage direct sur la dégradation du cadre de vie.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "José Adam",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Riverain de Touffreville-sur-Eu",
+                    position: "Opposé au projet, refuse la ligne de manière ferme.",
+                    evidence: "Témoignage d'opposition locale directe.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Mathieu Massy",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Agriculteur",
+                    position: "Opposé au projet sur son exploitation ; refuse les implantations de pylônes sur ses terres.",
+                    evidence: "Représente la fronde des exploitants directement impactés.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Reynald Massy",
+                    category: "opposants",
+                    stance: "opposed",
+                    role: "Éleveur",
+                    position: "Craint les impacts sur l’élevage et la suppression d’un bosquet protecteur.",
+                    evidence: "Inquiétudes liées au bien-être animal et à l'écosystème local.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Christine Rodier",
+                    category: "elus-opp",
+                    stance: "opposed",
+                    role: "Maire de Millebosc",
+                    position: "Opposée au tracé traversant la forêt d’Eu et critique fermement la destruction forestière induite.",
+                    evidence: "Opposition municipale officielle justifiée par la défense du patrimoine naturel.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Rollon Mouchel-Blaisot",
+                    category: "elus-fav",
+                    stance: "favorable",
+                    role: "Préfet de la Somme",
+                    position: "Position institutionnelle ; reconnaît les nuisances mais défend le projet comme une nécessité nationale.",
+                    evidence: "Assume le portage de l'intérêt supérieur de l'État.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Emmanuel Moulard",
+                    category: "elus-fav",
+                    stance: "neutral",
+                    role: "Secrétaire général de la préfecture de la Somme",
+                    position: "Présente les dispositifs d’accompagnement et d’indemnisation.",
+                    evidence: "Gère le volet administratif et compensatoire du dossier.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Maire de Touffreville-sur-Eu",
+                    category: "elus-fav",
+                    stance: "neutral",
+                    role: "Édile local",
+                    position: "Cité lors de visites de RTE, sans position tranchée publiquement exprimée dans le corpus.",
+                    evidence: "Présence institutionnelle sans prise de position explicite.",
+                    certainty: "Faible"
+                },
+                {
+                    name: "FDSEA 80",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Syndicat agricole (Somme)",
+                    position: "Défend les agriculteurs concernés ; exige une meilleure indemnisation sans s'opposer frontalement au principe de la ligne.",
+                    evidence: "Pression syndicale ciblée sur les compensations financières.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "FDSEA Seine-Maritime",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Syndicat agricole (Seine-Maritime)",
+                    position: "Impliqué activement dans les négociations avec RTE sur les compensations liées aux servitudes.",
+                    evidence: "Défense des intérêts fonciers des exploitants.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "JA 80",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Jeunes Agriculteurs (Somme)",
+                    position: "Contestent vivement les barèmes de compensations proposés pour la perte de valeur des terres.",
+                    evidence: "Alerte sur la pérennité économique des jeunes exploitations.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "FNSEA 76",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Syndicat agricole majoritaire",
+                    position: "Revendique une meilleure prise en compte des préjudices d'exploitation.",
+                    evidence: "Relais institutionnel de la grogne des propriétaires terriens.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Chambre d’agriculture de la Somme",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Institution consulaire",
+                    position: "Partie prenante des discussions officielles et garante de la défense des intérêts agricoles.",
+                    evidence: "Cadre de négociation institutionnelle.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Propriétaires ruraux / PPR",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Organisation foncière",
+                    position: "Représente les intérêts des propriétaires terriens dans les négociations sur les servitudes et la perte de chance économique.",
+                    evidence: "Défense de la valeur du capital foncier.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "CGB 80",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Syndicat betteravier",
+                    position: "Intervient sur les impacts logistiques lourds et les contraintes d’exploitation créées par les pylônes.",
+                    evidence: "Point de vigilance technique et logistique agricole.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "RTE",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Gestionnaire du réseau de transport",
+                    position: "Porteur principal, défend le projet comme indispensable à la transition énergétique et au raccordement de l'EPR2 et de l'éolien.",
+                    evidence: "Maître d'ouvrage défendant l'utilité publique de la ligne.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Enedis",
+                    category: "porteurs",
+                    stance: "neutral",
+                    role: "Gestionnaire du réseau de distribution",
+                    position: "Co-porteur technique de certaines infrastructures de distribution associées au projet global.",
+                    evidence: "Partenaire technique du réseau.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "EDF",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Groupe énergétique",
+                    position: "Opérateur des réacteurs EPR2 de Penly et bénéficiaire indirect de l'infrastructure.",
+                    evidence: "Lien structurel avec les besoins de raccordement nucléaire.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Préfecture de la Somme",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Représentation de l'État",
+                    position: "Assure le pilotage administratif et encadre le volet indemnitaire du dossier.",
+                    evidence: "Instance de régulation et de validation administrative.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Préfecture de Seine-Maritime",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Représentation de l'État",
+                    position: "Pilote les procédures administratives liées à l'implantation du projet sur son département.",
+                    evidence: "Cadrage légal et administratif.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Autorité environnementale",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Instance de contrôle",
+                    position: "Chargée d’émettre un avis environnemental indépendant sur les destructions et mesures compensatoires.",
+                    evidence: "Acteur clé dans l'évaluation des impacts sur la forêt d'Eu.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Commission indépendante d’indemnisation",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Instance d'évaluation",
+                    position: "Chargée d’évaluer les préjudices fonciers et agricoles liés à l'implantation des pylônes.",
+                    evidence: "Arbitre des tensions financières entre RTE et les syndicats.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "CNDP",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Commission nationale du débat public",
+                    position: "Garante de l'organisation et de la transparence de la concertation publique préalable.",
+                    evidence: "Encadre le recueil des avis citoyens.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Commission d’enquête publique",
+                    category: "orgs",
+                    stance: "neutral",
+                    role: "Instance de consultation",
+                    position: "Chargée de recueillir formellement les avis du public et d'émettre un rapport de synthèse.",
+                    evidence: "Étape juridique et démocratique de l'étude d'impact.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Cyril Wagner",
+                    category: "porteurs",
+                    stance: "favorable",
+                    role: "Directeur adjoint ingénierie RTE Hauts-de-France",
+                    position: "Défend le caractère absolument indispensable du projet face à l'obsolescence du réseau et aux nouveaux besoins.",
+                    evidence: "Porte-parole technique sur l'utilité du projet.",
+                    certainty: "Haute"
+                },
+                {
+                    name: "Eiffage",
+                    category: "porteurs",
+                    stance: "neutral",
+                    role: "Groupe de travaux publics",
+                    position: "Entreprise mentionnée par des opposants dans le cadre des chantiers préparatoires ou travaux associés.",
+                    evidence: "Cité comme sous-traitant opérationnel.",
+                    certainty: "Faible"
+                }
             ],
+
             griefs: [
-                { title: "🌲 Déforestation et biodiversité", text: "Crainte majeure liée à la destruction annoncée de plusieurs hectares de la Forêt d’Eu (coupe d’arbres centenaires) et à l'atteinte globale aux espaces naturels protégés." },
-                { title: "🦅 Menace sur le Busard cendré", text: "Espèce protégée régulièrement citée dans les inquiétudes environnementales ; la gravité de cet impact est toutefois contestée par les études sémantiques de RTE." },
-                { title: "🏗️ Artificialisation et paysage", text: "Rejet structurel de l'implantation de pylônes de très grande hauteur (400 kV) venant balafrer des secteurs ruraux et forestiers préservés." },
-                { title: "🏡 Dégradation du cadre de vie", text: "Alerte des riverains sur les nuisances visuelles lourdes, la trop grande proximité des habitations et la pollution électromagnétique redoutée." },
-                { title: "📉 Dévalorisation immobilière", text: "Crainte prégnante chez les propriétaires riverains (comme Francine Adam) d'une décote sévère de la valeur nette de leurs biens immobiliers." },
-                { title: "🚜 Lourds impacts agricoles", text: "Dénonciation par les syndicats des contraintes de circulation pour les engins (CGB), de la perte de productivité et des atteintes directes aux exploitations familiales." },
-                { title: "💶 Insuffisance des indemnisations", text: "Contestation forte des barèmes proposés par RTE, jugés dérisoires face à la perte de chance économique et foncière durable (PPR, FDSEA)." },
-                { title: "⚡ Justification contestée", text: "Certains opposants estiment que les besoins avancés par RTE (sécurisation, raccordement EPR2 de Penly) ne sont pas solidement démontrés ou qu'ils justifient d'autres alternatives." },
-                { title: "🗣️ Déficit de concertation", text: "Le collectif Stop THT 76-80 critique vivement un processus de décision biaisé où les tracés alternatifs moins destructeurs n'ont pas été sincèrement étudiés." },
-                { title: "⚖️ Sentiment de sacrifice territorial", text: "Les opposants dénoncent un projet où les territoires ruraux traversés (Somme, Seine-Maritime) subissent toutes les nuisances au nom d'un intérêt national centralisé sans retombées locales." }
+                {
+                    title: "🌲 Déforestation et biodiversité",
+                    text: "Crainte majeure liée à la destruction annoncée de plusieurs hectares de la forêt d’Eu et à l'atteinte globale aux espaces naturels protégés."
+                },
+                {
+                    title: "🦅 Menace sur le Busard cendré",
+                    text: "Espèce protégée régulièrement citée dans les inquiétudes environnementales."
+                },
+                {
+                    title: "🏗️ Artificialisation et paysage",
+                    text: "Rejet de l'implantation de pylônes de très grande hauteur venant transformer des secteurs ruraux et forestiers préservés."
+                },
+                {
+                    title: "🏡 Dégradation du cadre de vie",
+                    text: "Alerte des riverains sur les nuisances visuelles, la proximité des habitations et les effets redoutés."
+                },
+                {
+                    title: "📉 Dévalorisation immobilière",
+                    text: "Crainte d'une diminution de la valeur des biens immobiliers situés à proximité du tracé."
+                },
+                {
+                    title: "🚜 Impacts agricoles",
+                    text: "Dénonciation des contraintes de circulation, des pertes de productivité et des atteintes portées aux exploitations."
+                },
+                {
+                    title: "💶 Insuffisance des indemnisations",
+                    text: "Contestation des barèmes proposés au regard des préjudices économiques et fonciers durables."
+                },
+                {
+                    title: "⚡ Justification contestée",
+                    text: "Certains opposants contestent les besoins avancés pour justifier la nouvelle infrastructure."
+                },
+                {
+                    title: "🗣️ Déficit de concertation",
+                    text: "Critique d'un processus dans lequel les solutions alternatives seraient insuffisamment étudiées."
+                },
+                {
+                    title: "⚖️ Sentiment de sacrifice territorial",
+                    text: "Les territoires traversés estiment supporter les nuisances d'un projet répondant essentiellement à un intérêt national."
+                }
             ],
+
             vigilance: [
-                "<strong>Tensions sur l'indemnisation agricole :</strong> Le front agricole ne s'oppose pas systématiquement au projet par idéologie, mais livre une bataille acharnée sur les protocoles d'indemnisation. Une rupture des négociations avec la FDSEA ou les JA pourrait radicaliser ce pan de l'opposition.",
-                "<strong>Symbole de la Forêt d'Eu :</strong> L'abattage d'arbres matures en zone forestière (Forêt d'Eu) cristallise l'émotion locale et municipale (Mairie de Millebosc) et offre un terrain fertile pour un éventuel recours basé sur la destruction d'espèces protégées (Busard cendré).",
-                "<strong>Gouvernance imposée (EPR2) :</strong> Le rattachement du projet aux besoins de sécurisation de l'EPR2 de Penly et des parcs éoliens l'inscrit dans une urgence d'État (loi d'accélération). Les opposants dénoncent un passage en force qui limite de fait l'impact de l'enquête publique.",
-                "<strong>Revendication d'enfouissement :</strong> Comme dans d'autres dossiers THT récents, la fracture porte moins sur la nécessité de transporter l'électricité que sur le refus obstiné de RTE d'envisager des solutions d'enfouissement, systématiquement rejetées pour des raisons de coût et de délai."
+                "<strong>Tensions sur l'indemnisation agricole :</strong> Le front agricole ne s'oppose pas systématiquement au principe du projet, mais conteste fortement les protocoles d'indemnisation.",
+                "<strong>Symbole de la forêt d'Eu :</strong> L'abattage d'arbres matures cristallise l'opposition locale et municipale.",
+                "<strong>Gouvernance imposée :</strong> Le rattachement du projet aux besoins de l'EPR2 et des parcs éoliens renforce le sentiment d'urgence imposée.",
+                "<strong>Revendication d'enfouissement :</strong> La fracture porte également sur le rejet des solutions souterraines, souvent écartées pour des raisons de coût et de délai."
             ],
+
             sources: [
-                "<strong>ICI Normandie / Radio France :</strong> Média public régional ; information générale et recueil de témoignages d'opposants et d'élus de terrain.",
-                "<strong>Le Parisien :</strong> Quotidien national ; reportage terrain mettant en lumière la contestation des riverains face aux emprises.",
-                "<strong>Actu.fr :</strong> Réseau de médias locaux ; relais des témoignages de riverains et des actions du collectif Stop THT.",
-                "<strong>Courrier Picard :</strong> Quotidien régional ; couverture approfondie des enjeux syndicaux et de la grogne agricole picarde.",
-                "<strong>Action Agricole Picarde :</strong> Presse professionnelle ; suivi technique des négociations sur les servitudes et indemnités foncières.",
-                "<strong>RTE France :</strong> Source institutionnelle ; présentation officielle du projet, du tracé et des justifications techniques.",
-                "<strong>CNDP source :</strong> Source institutionnelle ; documents et bilans liés à la phase de concertation publique.",
-                "<strong>Google News & Curebot :</strong> Agrégateurs documentaires utilisés pour compiler et croiser la revue de presse locale et nationale."
+                "<strong>ICI Normandie / Radio France :</strong> Informations régionales et témoignages d'opposants et d'élus.",
+                "<strong>Le Parisien :</strong> Reportages de terrain sur la contestation des riverains.",
+                "<strong>Actu.fr :</strong> Témoignages locaux et suivi des actions du collectif.",
+                "<strong>Courrier Picard :</strong> Couverture des enjeux agricoles et syndicaux.",
+                "<strong>Action Agricole Picarde :</strong> Suivi des négociations relatives aux servitudes et indemnités.",
+                "<strong>RTE France :</strong> Présentation officielle du projet et de ses justifications techniques.",
+                "<strong>CNDP :</strong> Documents liés à la concertation publique."
             ]
         };
 
-        let activeCategory = 'all';
-        let activeStance = 'all';
-        let searchTerm = '';
+        /* =====================================================
+           ÉTAT DES FILTRES
+        ===================================================== */
+
+        let activeCategory = "all";
+        let activeStance = "all";
+        let searchTerm = "";
+
+        /* =====================================================
+           OUTILS
+        ===================================================== */
 
         function normalizeText(value) {
-            return String(value || '')
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
+            return String(value || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
                 .toLowerCase()
                 .trim();
         }
 
-        // Lancement au chargement du DOM
+        /* =====================================================
+           INITIALISATION
+        ===================================================== */
+
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById('header-title').innerText = projectData.meta.title;
-            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
+            document.getElementById("header-title").innerText =
+                projectData.meta.title;
+
+            document.getElementById("header-subtitle").innerText =
+                projectData.meta.subtitle;
 
             renderFilters();
             renderGrid();
@@ -644,175 +1457,166 @@ oninput="setSearch(this.value)"
             renderLists();
         });
 
-        // Gestion du menu Onglets (this transmis explicitement pour éviter tout gel du navigateur)
+        /* =====================================================
+           ONGLETS
+        ===================================================== */
+
         function switchTab(tabName, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            btn.classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+            document
+                .querySelectorAll(".tab-btn")
+                .forEach(button => button.classList.remove("active"));
+
+            document
+                .querySelectorAll(".tab-content")
+                .forEach(content => content.classList.remove("active"));
+
+            btn.classList.add("active");
+
+            document
+                .getElementById(`tab-${tabName}`)
+                .classList.add("active");
         }
 
-        // Rendu dynamique de la barre latérale et calcul automatisé des effectifs
+        /* =====================================================
+           FILTRES LATÉRAUX
+        ===================================================== */
+
         function renderFilters() {
-            const catContainer = document.getElementById('cat-filters-container');
-            const stanceContainer = document.getElementById('stance-filters-container');
-            
-            catContainer.innerHTML = '';
-            stanceContainer.innerHTML = '';
+            const catContainer =
+                document.getElementById("cat-filters-container");
 
-            // 1. Filtres Catégories
-            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
-                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
-                const activeClass = key === activeCategory ? 'active' : '';
-                catContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
-                        <span>${label}</span> <span class="count">${count}</span>
-                    </button>
-                `;
-            });
+            const stanceContainer =
+                document.getElementById("stance-filters-container");
 
-            // 2. Positionnements (Stances)
-            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
-                const activeClass = key === activeStance ? 'active' : '';
-                stanceContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
+            catContainer.innerHTML = "";
+            stanceContainer.innerHTML = "";
+
+            Object.entries(projectData.taxonomy.categories)
+                .forEach(([key, label]) => {
+                    const count =
+                        key === "all"
+                            ? projectData.actors.length
+                            : projectData.actors.filter(
+                                actor => actor.category === key
+                            ).length;
+
+                    const button = document.createElement("button");
+
+                    button.type = "button";
+                    button.className =
+                        `filter-btn ${key === activeCategory ? "active" : ""}`;
+
+                    button.innerHTML = `
                         <span>${label}</span>
-                    </button>
-                `;
-            });
+                        <span class="count">${count}</span>
+                    `;
+
+                    button.addEventListener("click", () => {
+                        setCategoryFilter(key);
+                    });
+
+                    catContainer.appendChild(button);
+                });
+
+            Object.entries(projectData.taxonomy.stances)
+                .forEach(([key, label]) => {
+                    const count =
+                        key === "all"
+                            ? projectData.actors.length
+                            : projectData.actors.filter(
+                                actor => actor.stance === key
+                            ).length;
+
+                    const button = document.createElement("button");
+
+                    button.type = "button";
+                    button.className =
+                        `filter-btn ${key === activeStance ? "active" : ""}`;
+
+                    button.innerHTML = `
+                        <span>${label}</span>
+                        <span class="count">${count}</span>
+                    `;
+
+                    button.addEventListener("click", () => {
+                        setStanceFilter(key);
+                    });
+
+                    stanceContainer.appendChild(button);
+                });
         }
 
-        function setCategoryFilter(category, el) {
-            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
+        function setCategoryFilter(category) {
             activeCategory = category;
+            renderFilters();
             renderGrid();
         }
 
-        function setStanceFilter(stance, el) {
-            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
+        function setStanceFilter(stance) {
             activeStance = stance;
+            renderFilters();
             renderGrid();
         }
-        
+
+        /* =====================================================
+           RECHERCHE
+        ===================================================== */
+
         function setSearch(value) {
             searchTerm = normalizeText(value);
+
+            const clearButton =
+                document.getElementById("clear-search");
+
+            clearButton.classList.toggle(
+                "visible",
+                searchTerm !== ""
+            );
+
             renderGrid();
-}
-        // Rendu dynamique des fiches acteurs filtrées
+        }
+
+        function clearSearch() {
+            const searchInput =
+                document.getElementById("actor-search");
+
+            searchInput.value = "";
+            searchTerm = "";
+
+            document
+                .getElementById("clear-search")
+                .classList.remove("visible");
+
+            renderGrid();
+            searchInput.focus();
+        }
+
+        function resetAllFilters() {
+            activeCategory = "all";
+            activeStance = "all";
+            searchTerm = "";
+
+            const searchInput =
+                document.getElementById("actor-search");
+
+            searchInput.value = "";
+
+            document
+                .getElementById("clear-search")
+                .classList.remove("visible");
+
+            renderFilters();
+            renderGrid();
+        }
+
+        /* =====================================================
+           RENDU DES CARTES
+        ===================================================== */
+
         function renderGrid() {
-            const grid = document.getElementById('actors-grid');
-            grid.innerHTML = '';
+            const grid =
+                document.getElementById("actors-grid");
 
-            const filteredActors = projectData.actors.filter(actor => {
-const matchCategory =
-activeCategory === 'all' ||
-actor.category === activeCategory;
- 
-const matchStance =
-activeStance === 'all' ||
-actor.stance === activeStance;
- 
-const searchableContent = normalizeText([
-actor.name,
-actor.role,
-actor.position,
-actor.evidence,
-actor.certainty,
-projectData.taxonomy.categories[actor.category],
-projectData.taxonomy.stances[actor.stance]
-].join(' '));
- 
-const matchSearch =
-searchTerm === '' ||
-searchableContent.includes(searchTerm);
- 
-return matchCategory && matchStance && matchSearch;
-});
+            const resultsCount =
+                document.getElementById("results-count");
 
-            if (filteredActors.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
-                return;
-            }
-
-            filteredActors.forEach(actor => {
-                const card = document.createElement('div');
-                card.className = `actor-card ${actor.stance}`;
-                card.onclick = () => openActorModal(actor);
-
-                card.innerHTML = `
-                    <div class="actor-header">
-                        <div class="actor-name">${actor.name}</div>
-                        <div class="actor-role">${actor.role}</div>
-                    </div>
-                    <div class="actor-body">${actor.position}</div>
-                    <div class="actor-footer">
-                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
-                        <span class="certitude">Certitude : ${actor.certainty}</span>
-                    </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-
-        // Rendu dynamique de l'onglet 2 (Griefs)
-        function renderGriefs() {
-            const container = document.getElementById('griefs-grid');
-            container.innerHTML = '';
-
-            projectData.griefs.forEach(g => {
-                container.innerHTML += `
-                    <div class="grief-card">
-                        <h2>${g.title}</h2>
-                        <p>${g.text}</p>
-                    </div>
-                `;
-            });
-        }
-
-        // Rendu des listes de vigilance et sources (onglet 3)
-        function renderLists() {
-            const vigList = document.getElementById('vigilance-list');
-            const srcList = document.getElementById('sources-list');
-
-            vigList.innerHTML = '';
-            srcList.innerHTML = '';
-
-            projectData.vigilance.forEach(item => {
-                vigList.innerHTML += `<li>${item}</li>`;
-            });
-            projectData.sources.forEach(item => {
-                srcList.innerHTML += `<li>${item}</li>`;
-            });
-        }
-
-        // Hydratation et ouverture de la fenêtre modale
-        function openActorModal(actor) {
-            document.getElementById('modal-name').innerText = actor.name;
-            document.getElementById('modal-role').innerText = actor.role;
-            document.getElementById('modal-position').innerText = actor.position;
-            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
-            document.getElementById('modal-certainty').innerText = actor.certainty;
-
-            const badge = document.getElementById('modal-stance-badge');
-            badge.className = `badge ${actor.stance}`;
-            badge.innerText = projectData.taxonomy.stances[actor.stance];
-
-            toggleModal(true);
-        }
-
-        function toggleModal(show) {
-            const modal = document.getElementById('actor-modal');
-            modal.classList.toggle('active', show);
-        }
-
-        function closeModal(event) {
-            if (event.target.id === 'actor-modal') {
-                toggleModal(false);
-            }
-        }
-    </script>
-</body>
-</html>
