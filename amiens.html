@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Cartographie interactive — Ligne THT Amiens – Petit-Caux</title>
 
     <style>
@@ -13,23 +12,17 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-
             --color-opposed: #ef4444;
             --color-opposed-light: #fee2e2;
             --color-favorable: #22c55e;
             --color-favorable-light: #dcfce7;
             --color-neutral: #f59e0b;
             --color-neutral-light: #fef3c7;
-
             --primary: #3b82f6;
             --primary-dark: #1d4ed8;
             --primary-light: #eff6ff;
-
             --radius: 12px;
-            --shadow:
-                0 4px 6px -1px rgb(0 0 0 / 0.05),
-                0 2px 4px -2px rgb(0 0 0 / 0.05);
-
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
             --transition: all 0.2s ease-in-out;
         }
 
@@ -40,15 +33,7 @@
         }
 
         body {
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                Roboto,
-                Helvetica,
-                Arial,
-                sans-serif;
-
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-main);
             line-height: 1.5;
@@ -79,10 +64,6 @@
             color: var(--text-muted);
             font-size: 1.1rem;
         }
-
-        /* =====================================================
-           ONGLETS
-        ===================================================== */
 
         .tabs {
             display: flex;
@@ -125,34 +106,17 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(4px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* =====================================================
-           INTERFACE PRINCIPALE
-           
-           Les cartes sont dans la première colonne.
-           La barre latérale est dans la seconde colonne.
-        ===================================================== */
-
+        /* Barre latérale à gauche, cartes à droite. */
         .dashboard-layout {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) 310px;
+            grid-template-columns: 310px minmax(0, 1fr);
             gap: 2rem;
             align-items: start;
         }
-
-        /* =====================================================
-           GRILLE DES CARTES
-        ===================================================== */
 
         .actors-area {
             min-width: 0;
@@ -175,10 +139,7 @@
 
         .actors-grid {
             display: grid;
-
-            /* Deux cartes exactement par ligne sur grand écran */
             grid-template-columns: repeat(2, minmax(0, 1fr));
-
             gap: 1.5rem;
             align-items: stretch;
             min-width: 0;
@@ -192,14 +153,11 @@
             min-width: 0;
             min-height: 240px;
             overflow: hidden;
-
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 1.5rem;
-
             background-color: var(--bg-card);
             box-shadow: var(--shadow);
-
             cursor: pointer;
             transition: var(--transition);
         }
@@ -223,21 +181,11 @@
             height: 100%;
         }
 
-        .actor-card.opposed::before {
-            background-color: var(--color-opposed);
-        }
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
 
-        .actor-card.favorable::before {
-            background-color: var(--color-favorable);
-        }
-
-        .actor-card.neutral::before {
-            background-color: var(--color-neutral);
-        }
-
-        .actor-header {
-            margin-bottom: 1rem;
-        }
+        .actor-header { margin-bottom: 1rem; }
 
         .actor-name {
             margin-bottom: 0.25rem;
@@ -259,7 +207,6 @@
             overflow: hidden;
             color: var(--text-main);
             font-size: 0.95rem;
-
             -webkit-line-clamp: 4;
             -webkit-box-orient: vertical;
         }
@@ -269,10 +216,8 @@
             align-items: center;
             justify-content: space-between;
             gap: 0.75rem;
-
             border-top: 1px solid var(--border-color);
             padding-top: 0.75rem;
-
             font-size: 0.8rem;
         }
 
@@ -287,20 +232,9 @@
             text-transform: uppercase;
         }
 
-        .badge.opposed {
-            background-color: var(--color-opposed-light);
-            color: var(--color-opposed);
-        }
-
-        .badge.favorable {
-            background-color: var(--color-favorable-light);
-            color: var(--color-favorable);
-        }
-
-        .badge.neutral {
-            background-color: var(--color-neutral-light);
-            color: var(--color-neutral);
-        }
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
 
         .certitude {
             color: var(--text-muted);
@@ -319,30 +253,19 @@
             text-align: center;
         }
 
-        /* =====================================================
-           BARRE LATÉRALE À DROITE
-        ===================================================== */
-
         .filters-sidebar {
             position: sticky;
             top: 2rem;
             min-width: 0;
-
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 1.5rem;
-
             background-color: var(--bg-card);
             box-shadow: var(--shadow);
         }
 
-        .filter-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .filter-section:last-child {
-            margin-bottom: 0;
-        }
+        .filter-section { margin-bottom: 1.5rem; }
+        .filter-section:last-child { margin-bottom: 0; }
 
         .filter-section h3 {
             margin-bottom: 0.75rem;
@@ -364,19 +287,15 @@
             align-items: center;
             justify-content: space-between;
             gap: 0.75rem;
-
             width: 100%;
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 0.6rem 0.8rem;
-
             background-color: var(--bg-primary);
             color: var(--text-main);
-
             font-size: 0.9rem;
             font-weight: 500;
             text-align: left;
-
             cursor: pointer;
             transition: var(--transition);
         }
@@ -404,26 +323,14 @@
         }
 
         .filter-btn.active .count,
-        .filter-btn:hover .count {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-
-        /* =====================================================
-           RECHERCHE RENFORCÉE
-        ===================================================== */
+        .filter-btn:hover .count { background-color: rgba(255, 255, 255, 0.2); }
 
         .search-section {
             margin-bottom: 1.75rem;
             border: 1px solid rgba(59, 130, 246, 0.4);
             border-radius: 10px;
             padding: 1rem;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    rgba(59, 130, 246, 0.14),
-                    rgba(59, 130, 246, 0.04)
-                );
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.04));
         }
 
         .search-label {
@@ -436,9 +343,7 @@
             text-transform: uppercase;
         }
 
-        .search-wrapper {
-            position: relative;
-        }
+        .search-wrapper { position: relative; }
 
         .search-icon {
             position: absolute;
@@ -446,7 +351,6 @@
             left: 0.85rem;
             transform: translateY(-50%);
             color: var(--primary);
-            font-size: 1.1rem;
             line-height: 1;
             pointer-events: none;
         }
@@ -454,38 +358,20 @@
         .search-input {
             width: 100%;
             min-height: 48px;
-
             border: 2px solid var(--primary);
             border-radius: 8px;
             outline: none;
             padding: 0.75rem 2.5rem 0.75rem 2.6rem;
-
             background-color: #ffffff;
             color: var(--text-main);
-
             font-size: 0.9rem;
             font-weight: 500;
-
             transition: var(--transition);
-        }
-
-        .search-input::placeholder {
-            color: #64748b;
-            opacity: 1;
-        }
-
-        .search-input:hover {
-            border-color: #2563eb;
         }
 
         .search-input:focus {
             border-color: var(--primary-dark);
             box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
-        }
-
-        /* Apparence du bouton natif d'effacement */
-        .search-input::-webkit-search-cancel-button {
-            cursor: pointer;
         }
 
         .clear-search {
@@ -494,18 +380,14 @@
             right: 0.65rem;
             display: none;
             transform: translateY(-50%);
-
             width: 28px;
             height: 28px;
             border: none;
             border-radius: 50%;
-
             background-color: var(--border-color);
             color: var(--text-muted);
-
             font-size: 1rem;
             font-weight: 700;
-            line-height: 1;
             cursor: pointer;
         }
 
@@ -515,10 +397,7 @@
             justify-content: center;
         }
 
-        .clear-search:hover {
-            background-color: #cbd5e1;
-            color: var(--text-main);
-        }
+        .clear-search:hover { background-color: #cbd5e1; color: var(--text-main); }
 
         .search-help {
             margin-top: 0.55rem;
@@ -533,13 +412,10 @@
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 0.65rem 0.8rem;
-
             background-color: white;
             color: var(--text-muted);
-
             font-size: 0.85rem;
             font-weight: 600;
-
             cursor: pointer;
             transition: var(--transition);
         }
@@ -550,30 +426,19 @@
             color: var(--primary-dark);
         }
 
-        /* =====================================================
-           MODALE
-        ===================================================== */
-
         .modal {
             position: fixed;
             inset: 0;
             z-index: 1000;
-
             display: none;
             align-items: center;
             justify-content: center;
-
-            width: 100%;
-            height: 100%;
             padding: 1rem;
-
             background-color: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
         }
 
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
 
         .modal-content {
             position: relative;
@@ -581,48 +446,30 @@
             max-width: 600px;
             max-height: calc(100vh - 2rem);
             overflow-y: auto;
-
             border-radius: var(--radius);
             padding: 2rem;
-
             background-color: var(--bg-card);
             box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-
             animation: modalAnim 0.2s ease-out;
         }
 
         @keyframes modalAnim {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .close-modal {
             position: absolute;
             top: 1rem;
             right: 1rem;
-
             border: none;
             background: none;
             color: var(--text-muted);
-
             font-size: 1.5rem;
             cursor: pointer;
         }
 
-        .close-modal:hover {
-            color: var(--text-main);
-        }
-
-        .modal-field {
-            margin-bottom: 1.25rem;
-        }
+        .modal-field { margin-bottom: 1.25rem; }
 
         .modal-field label {
             display: block;
@@ -631,11 +478,6 @@
             font-size: 0.8rem;
             font-weight: 700;
             text-transform: uppercase;
-        }
-
-        .modal-field p {
-            color: var(--text-main);
-            font-size: 1rem;
         }
 
         .modal-title {
@@ -661,17 +503,8 @@
             padding-top: 1rem;
         }
 
-        .modal-footer .modal-field {
-            margin: 0;
-        }
-
-        .modal-footer .modal-field:last-child {
-            text-align: right;
-        }
-
-        /* =====================================================
-           ONGLET GRIEFS
-        ===================================================== */
+        .modal-footer .modal-field { margin: 0; }
+        .modal-footer .modal-field:last-child { text-align: right; }
 
         .griefs-container {
             display: grid;
@@ -679,30 +512,8 @@
             gap: 2rem;
         }
 
-        .grief-card {
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 2rem;
-            background-color: var(--bg-card);
-            box-shadow: var(--shadow);
-        }
-
-        .grief-card h2 {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-            color: #0f172a;
-            font-size: 1.3rem;
-            font-weight: 700;
-        }
-
-        /* =====================================================
-           LISTES ET SOURCES
-        ===================================================== */
-
+        .grief-card,
         .list-card {
-            margin-bottom: 2rem;
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 2rem;
@@ -710,194 +521,62 @@
             box-shadow: var(--shadow);
         }
 
-        .list-card h2 {
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
-        }
-
-        .list-card ul {
-            padding-left: 1.5rem;
-        }
-
-        .list-card li {
-            margin-bottom: 0.75rem;
-        }
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
+        .grief-card h2 { margin-bottom: 1rem; color: #0f172a; font-size: 1.3rem; }
+        .list-card { margin-bottom: 2rem; }
+        .list-card h2 { margin-bottom: 1rem; font-size: 1.4rem; }
+        .list-card ul { padding-left: 1.5rem; }
+        .list-card li { margin-bottom: 0.75rem; }
 
         @media (max-width: 1150px) {
-            .dashboard-layout {
-                grid-template-columns: minmax(0, 1fr) 280px;
-                gap: 1.25rem;
-            }
-
-            /*
-             * On conserve deux cartes tant que l'espace le permet.
-             * Leur largeur minimale est réduite automatiquement.
-             */
-            .actors-grid {
-                gap: 1rem;
-            }
-
-            .actor-card {
-                padding: 1.25rem;
-            }
+            .dashboard-layout { grid-template-columns: 280px minmax(0, 1fr); gap: 1.25rem; }
+            .actors-grid { gap: 1rem; }
+            .actor-card { padding: 1.25rem; }
         }
 
         @media (max-width: 900px) {
-            body {
-                padding: 1.25rem;
-            }
-
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
-
-            /*
-             * La sidebar vient au-dessus des cartes sur tablette
-             * et mobile, même si elle est placée après dans le HTML.
-             */
-            .filters-sidebar {
-                grid-row: 1;
-                position: static;
-            }
-
-            .actors-area {
-                grid-row: 2;
-            }
-
-            .actors-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
-            .filter-options {
-                display: grid;
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
+            body { padding: 1.25rem; }
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .filters-sidebar { grid-row: 1; position: static; }
+            .actors-area { grid-row: 2; }
+            .actors-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .filter-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
         @media (max-width: 650px) {
-            body {
-                padding: 1rem;
-            }
-
-            header h1 {
-                font-size: 1.75rem;
-            }
-
-            header p {
-                font-size: 1rem;
-            }
-
-            .tabs {
-                gap: 0.5rem;
-            }
-
-            .tab-btn {
-                flex: 1 1 100%;
-            }
-
+            body { padding: 1rem; }
+            header h1 { font-size: 1.75rem; }
+            .tab-btn { flex: 1 1 100%; }
             .actors-grid,
-            .griefs-container {
-                grid-template-columns: 1fr;
-            }
-
-            .filter-options {
-                grid-template-columns: 1fr;
-            }
-
+            .griefs-container,
+            .filter-options { grid-template-columns: 1fr; }
             .actor-footer,
-            .modal-footer {
-                align-items: flex-start;
-                flex-direction: column;
-            }
-
+            .modal-footer { align-items: flex-start; flex-direction: column; }
             .certitude,
-            .modal-footer .modal-field:last-child {
-                text-align: left;
-            }
+            .modal-footer .modal-field:last-child { text-align: left; }
         }
     </style>
 </head>
 
 <body>
-
     <header>
         <h1 id="header-title">Chargement...</h1>
         <p id="header-subtitle"></p>
     </header>
 
     <nav class="tabs" aria-label="Navigation principale">
-        <button
-            class="tab-btn active"
-            type="button"
-            onclick="switchTab('carto', this)"
-        >
-            Cartographie des acteurs
-        </button>
-
-        <button
-            class="tab-btn"
-            type="button"
-            onclick="switchTab('griefs', this)"
-        >
-            Synthèse des oppositions
-        </button>
-
-        <button
-            class="tab-btn"
-            type="button"
-            onclick="switchTab('vigilance', this)"
-        >
-            Points de vigilance &amp; sources
-        </button>
+        <button class="tab-btn active" type="button" data-tab="carto">Cartographie des acteurs</button>
+        <button class="tab-btn" type="button" data-tab="griefs">Synthèse des oppositions</button>
+        <button class="tab-btn" type="button" data-tab="vigilance">Points de vigilance &amp; sources</button>
     </nav>
-
-    <!-- =====================================================
-         ONGLET CARTOGRAPHIE
-    ====================================================== -->
 
     <div id="tab-carto" class="tab-content active">
         <div class="dashboard-layout">
-
-            <!-- Les cartes sont volontairement placées en premier -->
-            <main class="actors-area">
-                <div class="results-summary">
-                    <p
-                        id="results-count"
-                        class="results-count"
-                        aria-live="polite"
-                    ></p>
-                </div>
-
-                <div
-                    class="actors-grid"
-                    id="actors-grid"
-                ></div>
-            </main>
-
-            <!-- Barre latérale placée à droite -->
-            <aside
-                class="filters-sidebar"
-                aria-label="Recherche et filtres de la cartographie"
-            >
+            <aside class="filters-sidebar" aria-label="Recherche et filtres de la cartographie">
                 <div class="search-section">
-                    <label
-                        class="search-label"
-                        for="actor-search"
-                    >
-                        Rechercher un acteur
-                    </label>
+                    <label class="search-label" for="actor-search">Rechercher un acteur</label>
 
                     <div class="search-wrapper">
-                        <span
-                            class="search-icon"
-                            aria-hidden="true"
-                        >
-                            🔍
-                        </span>
+                        <span class="search-icon" aria-hidden="true">🔍</span>
 
                         <input
                             id="actor-search"
@@ -906,7 +585,6 @@
                             placeholder="Nom, fonction, argument..."
                             autocomplete="off"
                             aria-describedby="search-help"
-                            oninput="setSearch(this.value)"
                         >
 
                         <button
@@ -915,64 +593,42 @@
                             type="button"
                             aria-label="Effacer la recherche"
                             title="Effacer la recherche"
-                            onclick="clearSearch()"
-                        >
-                            ×
-                        </button>
+                        >×</button>
                     </div>
 
-                    <p
-                        id="search-help"
-                        class="search-help"
-                    >
+                    <p id="search-help" class="search-help">
                         Recherche dans le nom, la fonction, la position et les preuves documentaires.
                     </p>
                 </div>
 
                 <div class="filter-section">
                     <h3>Collèges d'acteurs</h3>
-
-                    <div
-                        class="filter-options"
-                        id="cat-filters-container"
-                    ></div>
+                    <div class="filter-options" id="cat-filters-container"></div>
                 </div>
 
                 <div class="filter-section">
                     <h3>Positionnement</h3>
-
-                    <div
-                        class="filter-options"
-                        id="stance-filters-container"
-                    ></div>
+                    <div class="filter-options" id="stance-filters-container"></div>
                 </div>
 
-                <button
-                    class="reset-filters-btn"
-                    type="button"
-                    onclick="resetAllFilters()"
-                >
+                <button class="reset-filters-btn" id="reset-filters" type="button">
                     Réinitialiser la recherche et les filtres
                 </button>
             </aside>
 
+            <main class="actors-area">
+                <div class="results-summary">
+                    <p id="results-count" class="results-count" aria-live="polite"></p>
+                </div>
+
+                <div class="actors-grid" id="actors-grid"></div>
+            </main>
         </div>
     </div>
 
-    <!-- =====================================================
-         ONGLET GRIEFS
-    ====================================================== -->
-
     <div id="tab-griefs" class="tab-content">
-        <div
-            class="griefs-container"
-            id="griefs-grid"
-        ></div>
+        <div class="griefs-container" id="griefs-grid"></div>
     </div>
-
-    <!-- =====================================================
-         ONGLET VIGILANCE ET SOURCES
-    ====================================================== -->
 
     <div id="tab-vigilance" class="tab-content">
         <div class="list-card">
@@ -986,37 +642,13 @@
         </div>
     </div>
 
-    <!-- =====================================================
-         MODALE
-    ====================================================== -->
-
-    <div
-        class="modal"
-        id="actor-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-name"
-        onclick="closeModal(event)"
-    >
-        <div
-            class="modal-content"
-            onclick="event.stopPropagation()"
-        >
-            <button
-                class="close-modal"
-                type="button"
-                aria-label="Fermer la fenêtre"
-                onclick="toggleModal(false)"
-            >
-                ×
-            </button>
+    <div class="modal" id="actor-modal" role="dialog" aria-modal="true" aria-labelledby="modal-name">
+        <div class="modal-content">
+            <button class="close-modal" id="close-modal" type="button" aria-label="Fermer la fenêtre">×</button>
 
             <div class="modal-field">
                 <label>Nom / Entité</label>
-                <h2
-                    id="modal-name"
-                    class="modal-title"
-                ></h2>
+                <h2 id="modal-name" class="modal-title"></h2>
             </div>
 
             <div class="modal-field">
@@ -1031,42 +663,24 @@
 
             <div class="modal-field">
                 <label>Verbatim / Preuve documentaire</label>
-
-                <p
-                    id="modal-verbatim"
-                    class="modal-verbatim"
-                ></p>
+                <p id="modal-verbatim" class="modal-verbatim"></p>
             </div>
 
             <div class="modal-footer">
                 <div class="modal-field">
                     <label>Orientation</label>
-
-                    <span
-                        id="modal-stance-badge"
-                        class="badge"
-                    ></span>
+                    <span id="modal-stance-badge" class="badge"></span>
                 </div>
 
                 <div class="modal-field">
                     <label>Niveau de certitude</label>
-
-                    <p
-                        id="modal-certainty"
-                        class="certitude"
-                    ></p>
+                    <p id="modal-certainty" class="certitude"></p>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        /*
-         * Conservez ici votre objet projectData complet.
-         * Il n'est pas nécessaire de modifier vos tableaux actors,
-         * griefs, vigilance et sources.
-         */
-
         const projectData = {
             meta: {
                 title: "Cartographie interactive — Ligne THT Amiens – Petit-Caux",
@@ -1091,10 +705,6 @@
                 }
             },
 
-            /*
-             * Remettez ici, sans modification, l'intégralité
-             * du tableau actors de votre code.
-             */
             actors: [
                 {
                     name: "Stop THT 76-80",
@@ -1420,17 +1030,10 @@
             ]
         };
 
-        /* =====================================================
-           ÉTAT DES FILTRES
-        ===================================================== */
-
         let activeCategory = "all";
         let activeStance = "all";
         let searchTerm = "";
-
-        /* =====================================================
-           OUTILS
-        ===================================================== */
+        let lastFocusedElement = null;
 
         function normalizeText(value) {
             return String(value || "")
@@ -1440,183 +1043,262 @@
                 .trim();
         }
 
-        /* =====================================================
-           INITIALISATION
-        ===================================================== */
+        function getFilteredActors() {
+            return projectData.actors.filter(actor => {
+                const matchCategory = activeCategory === "all" || actor.category === activeCategory;
+                const matchStance = activeStance === "all" || actor.stance === activeStance;
+                const searchableText = normalizeText([
+                    actor.name,
+                    actor.role,
+                    actor.position,
+                    actor.evidence,
+                    actor.certainty
+                ].join(" "));
+                const matchSearch = searchTerm === "" || searchableText.includes(searchTerm);
+
+                return matchCategory && matchStance && matchSearch;
+            });
+        }
+
+        function renderFilters() {
+            const catContainer = document.getElementById("cat-filters-container");
+            const stanceContainer = document.getElementById("stance-filters-container");
+
+            catContainer.innerHTML = "";
+            stanceContainer.innerHTML = "";
+
+            Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.category === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeCategory ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeCategory));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
+                `;
+                button.addEventListener("click", () => {
+                    activeCategory = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                catContainer.appendChild(button);
+            });
+
+            Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.stance === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeStance ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeStance));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
+                `;
+                button.addEventListener("click", () => {
+                    activeStance = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                stanceContainer.appendChild(button);
+            });
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById("actors-grid");
+            const resultsCount = document.getElementById("results-count");
+            const filteredActors = getFilteredActors();
+
+            resultsCount.textContent = `${filteredActors.length} acteur${filteredActors.length > 1 ? "s" : ""} affiché${filteredActors.length > 1 ? "s" : ""} sur ${projectData.actors.length}`;
+            grid.innerHTML = "";
+
+            if (filteredActors.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        Aucun acteur ne correspond à votre recherche et aux filtres sélectionnés.
+                    </div>
+                `;
+                return;
+            }
+
+            filteredActors.forEach(actor => {
+                const card = document.createElement("article");
+                card.className = `actor-card ${actor.stance}`;
+                card.tabIndex = 0;
+                card.setAttribute("role", "button");
+                card.setAttribute("aria-label", `Ouvrir la fiche de ${actor.name}`);
+
+                card.innerHTML = `
+                    <div>
+                        <div class="actor-header">
+                            <div class="actor-name">${actor.name}</div>
+                            <div class="actor-role">${actor.role}</div>
+                        </div>
+
+                        <div class="actor-body">${actor.position}</div>
+                    </div>
+
+                    <div class="actor-footer">
+                        <span class="badge ${actor.stance}">
+                            ${projectData.taxonomy.stances[actor.stance]}
+                        </span>
+
+                        <span class="certitude">
+                            Certitude : ${actor.certainty}
+                        </span>
+                    </div>
+                `;
+
+                card.addEventListener("click", () => openActorModal(actor));
+                card.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openActorModal(actor);
+                    }
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        function renderGriefs() {
+            const container = document.getElementById("griefs-grid");
+            container.innerHTML = "";
+
+            projectData.griefs.forEach(grief => {
+                const card = document.createElement("article");
+                card.className = "grief-card";
+                card.innerHTML = `
+                    <h2>${grief.title}</h2>
+                    <p>${grief.text}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderLists() {
+            const vigilanceList = document.getElementById("vigilance-list");
+            const sourcesList = document.getElementById("sources-list");
+
+            vigilanceList.innerHTML = "";
+            sourcesList.innerHTML = "";
+
+            projectData.vigilance.forEach(item => {
+                const listItem = document.createElement("li");
+                listItem.innerHTML = item;
+                vigilanceList.appendChild(listItem);
+            });
+
+            projectData.sources.forEach(item => {
+                const listItem = document.createElement("li");
+                listItem.innerHTML = item;
+                sourcesList.appendChild(listItem);
+            });
+        }
+
+        function switchTab(tabName, button) {
+            document.querySelectorAll(".tab-btn").forEach(tabButton => {
+                tabButton.classList.remove("active");
+            });
+
+            document.querySelectorAll(".tab-content").forEach(content => {
+                content.classList.remove("active");
+            });
+
+            button.classList.add("active");
+            document.getElementById(`tab-${tabName}`).classList.add("active");
+        }
+
+        function openActorModal(actor) {
+            lastFocusedElement = document.activeElement;
+
+            document.getElementById("modal-name").textContent = actor.name;
+            document.getElementById("modal-role").textContent = actor.role;
+            document.getElementById("modal-position").textContent = actor.position;
+            document.getElementById("modal-verbatim").textContent = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById("modal-certainty").textContent = actor.certainty;
+
+            const badge = document.getElementById("modal-stance-badge");
+            badge.className = `badge ${actor.stance}`;
+            badge.textContent = projectData.taxonomy.stances[actor.stance];
+
+            toggleModal(true);
+        }
+
+        function toggleModal(show) {
+            const modal = document.getElementById("actor-modal");
+            modal.classList.toggle("active", show);
+            document.body.style.overflow = show ? "hidden" : "";
+
+            if (show) {
+                document.getElementById("close-modal").focus();
+            } else if (lastFocusedElement) {
+                lastFocusedElement.focus();
+            }
+        }
 
         document.addEventListener("DOMContentLoaded", () => {
-            document.getElementById("header-title").innerText =
-                projectData.meta.title;
-
-            document.getElementById("header-subtitle").innerText =
-                projectData.meta.subtitle;
+            document.getElementById("header-title").textContent = projectData.meta.title;
+            document.getElementById("header-subtitle").textContent = projectData.meta.subtitle;
 
             renderFilters();
             renderGrid();
             renderGriefs();
             renderLists();
+
+            document.querySelectorAll(".tab-btn").forEach(button => {
+                button.addEventListener("click", () => switchTab(button.dataset.tab, button));
+            });
+
+            const searchInput = document.getElementById("actor-search");
+            const clearButton = document.getElementById("clear-search");
+
+            searchInput.addEventListener("input", () => {
+                searchTerm = normalizeText(searchInput.value);
+                clearButton.classList.toggle("visible", searchTerm !== "");
+                renderGrid();
+            });
+
+            clearButton.addEventListener("click", () => {
+                searchInput.value = "";
+                searchTerm = "";
+                clearButton.classList.remove("visible");
+                renderGrid();
+                searchInput.focus();
+            });
+
+            document.getElementById("reset-filters").addEventListener("click", () => {
+                activeCategory = "all";
+                activeStance = "all";
+                searchTerm = "";
+                searchInput.value = "";
+                clearButton.classList.remove("visible");
+                renderFilters();
+                renderGrid();
+            });
+
+            document.getElementById("close-modal").addEventListener("click", () => toggleModal(false));
+
+            document.getElementById("actor-modal").addEventListener("click", event => {
+                if (event.target.id === "actor-modal") {
+                    toggleModal(false);
+                }
+            });
+
+            document.addEventListener("keydown", event => {
+                if (event.key === "Escape" && document.getElementById("actor-modal").classList.contains("active")) {
+                    toggleModal(false);
+                }
+            });
         });
-
-        /* =====================================================
-           ONGLETS
-        ===================================================== */
-
-        function switchTab(tabName, btn) {
-            document
-                .querySelectorAll(".tab-btn")
-                .forEach(button => button.classList.remove("active"));
-
-            document
-                .querySelectorAll(".tab-content")
-                .forEach(content => content.classList.remove("active"));
-
-            btn.classList.add("active");
-
-            document
-                .getElementById(`tab-${tabName}`)
-                .classList.add("active");
-        }
-
-        /* =====================================================
-           FILTRES LATÉRAUX
-        ===================================================== */
-
-        function renderFilters() {
-            const catContainer =
-                document.getElementById("cat-filters-container");
-
-            const stanceContainer =
-                document.getElementById("stance-filters-container");
-
-            catContainer.innerHTML = "";
-            stanceContainer.innerHTML = "";
-
-            Object.entries(projectData.taxonomy.categories)
-                .forEach(([key, label]) => {
-                    const count =
-                        key === "all"
-                            ? projectData.actors.length
-                            : projectData.actors.filter(
-                                actor => actor.category === key
-                            ).length;
-
-                    const button = document.createElement("button");
-
-                    button.type = "button";
-                    button.className =
-                        `filter-btn ${key === activeCategory ? "active" : ""}`;
-
-                    button.innerHTML = `
-                        <span>${label}</span>
-                        <span class="count">${count}</span>
-                    `;
-
-                    button.addEventListener("click", () => {
-                        setCategoryFilter(key);
-                    });
-
-                    catContainer.appendChild(button);
-                });
-
-            Object.entries(projectData.taxonomy.stances)
-                .forEach(([key, label]) => {
-                    const count =
-                        key === "all"
-                            ? projectData.actors.length
-                            : projectData.actors.filter(
-                                actor => actor.stance === key
-                            ).length;
-
-                    const button = document.createElement("button");
-
-                    button.type = "button";
-                    button.className =
-                        `filter-btn ${key === activeStance ? "active" : ""}`;
-
-                    button.innerHTML = `
-                        <span>${label}</span>
-                        <span class="count">${count}</span>
-                    `;
-
-                    button.addEventListener("click", () => {
-                        setStanceFilter(key);
-                    });
-
-                    stanceContainer.appendChild(button);
-                });
-        }
-
-        function setCategoryFilter(category) {
-            activeCategory = category;
-            renderFilters();
-            renderGrid();
-        }
-
-        function setStanceFilter(stance) {
-            activeStance = stance;
-            renderFilters();
-            renderGrid();
-        }
-
-        /* =====================================================
-           RECHERCHE
-        ===================================================== */
-
-        function setSearch(value) {
-            searchTerm = normalizeText(value);
-
-            const clearButton =
-                document.getElementById("clear-search");
-
-            clearButton.classList.toggle(
-                "visible",
-                searchTerm !== ""
-            );
-
-            renderGrid();
-        }
-
-        function clearSearch() {
-            const searchInput =
-                document.getElementById("actor-search");
-
-            searchInput.value = "";
-            searchTerm = "";
-
-            document
-                .getElementById("clear-search")
-                .classList.remove("visible");
-
-            renderGrid();
-            searchInput.focus();
-        }
-
-        function resetAllFilters() {
-            activeCategory = "all";
-            activeStance = "all";
-            searchTerm = "";
-
-            const searchInput =
-                document.getElementById("actor-search");
-
-            searchInput.value = "";
-
-            document
-                .getElementById("clear-search")
-                .classList.remove("visible");
-
-            renderFilters();
-            renderGrid();
-        }
-
-        /* =====================================================
-           RENDU DES CARTES
-        ===================================================== */
-
-        function renderGrid() {
-            const grid =
-                document.getElementById("actors-grid");
-
-            const resultsCount =
-                document.getElementById("results-count");
-
+    </script>
+</body>
+</html>
