@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cartographie interactive — Campus IA Fouju</title>
+
     <style>
         :root {
             --bg-primary: #f8fafc;
@@ -11,15 +12,15 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --border-color: #e2e8f0;
-            
             --color-opposed: #ef4444;
             --color-opposed-light: #fee2e2;
             --color-favorable: #22c55e;
             --color-favorable-light: #dcfce7;
             --color-neutral: #f59e0b;
             --color-neutral-light: #fef3c7;
-            
             --primary: #3b82f6;
+            --primary-dark: #1d4ed8;
+            --primary-light: #eff6ff;
             --radius: 12px;
             --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
             --transition: all 0.2s ease-in-out;
@@ -39,6 +40,11 @@
             padding: 2rem;
         }
 
+        button,
+        input {
+            font: inherit;
+        }
+
         header {
             margin-bottom: 2rem;
             border-bottom: 1px solid var(--border-color);
@@ -46,21 +52,22 @@
         }
 
         header h1 {
+            margin-bottom: 0.5rem;
+            color: #0f172a;
             font-size: 2.25rem;
             font-weight: 800;
-            color: #0f172a;
             letter-spacing: -0.025em;
-            margin-bottom: 0.5rem;
         }
 
         header p {
+            max-width: 1100px;
             color: var(--text-muted);
             font-size: 1.1rem;
         }
 
-        /* Menu Onglets */
         .tabs {
             display: flex;
+            flex-wrap: wrap;
             gap: 1rem;
             margin-bottom: 2rem;
             border-bottom: 2px solid var(--border-color);
@@ -68,14 +75,14 @@
         }
 
         .tab-btn {
-            background: none;
             border: none;
+            border-radius: var(--radius);
+            padding: 0.5rem 1rem;
+            background: none;
+            color: var(--text-muted);
             font-size: 1rem;
             font-weight: 600;
-            color: var(--text-muted);
-            padding: 0.5rem 1rem;
             cursor: pointer;
-            border-radius: var(--radius);
             transition: var(--transition);
         }
 
@@ -103,41 +110,172 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Interface Cartographie */
         .dashboard-layout {
             display: grid;
-            grid-template-columns: 280px 1fr;
+            grid-template-columns: 310px minmax(0, 1fr);
             gap: 2rem;
             align-items: start;
         }
 
-        @media (max-width: 968px) {
-            .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
+        .actors-area {
+            min-width: 0;
         }
 
-        /* Sidebar Filtres */
-        .filters-sidebar {
-            background-color: var(--bg-card);
-            padding: 1.5rem;
-            border-radius: var(--radius);
+        .results-summary {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            min-height: 35px;
+            margin-bottom: 1rem;
+        }
+
+        .results-count {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .actors-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1rem;
+            align-items: stretch;
+            min-width: 0;
+        }
+
+        .actor-card {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-width: 0;
+            min-height: 220px;
+            overflow: hidden;
             border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .actor-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        .actor-card:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.35);
+            outline-offset: 3px;
+        }
+
+        .actor-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+        }
+
+        .actor-card.opposed::before { background-color: var(--color-opposed); }
+        .actor-card.favorable::before { background-color: var(--color-favorable); }
+        .actor-card.neutral::before { background-color: var(--color-neutral); }
+
+        .actor-header { margin-bottom: 0.75rem; }
+
+        .actor-name {
+            margin-bottom: 0.25rem;
+            overflow-wrap: anywhere;
+            color: #0f172a;
+            font-size: 1.05rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .actor-role {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .actor-body {
+            display: -webkit-box;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            line-height: 1.4;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+        }
+
+        .actor-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 20px;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.65rem;
+            font-weight: 600;
+            letter-spacing: 0.025em;
+            text-transform: uppercase;
+        }
+
+        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
+        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
+        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
+
+        .certitude {
+            color: var(--text-muted);
+            font-style: italic;
+            text-align: right;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            border: 1px dashed var(--border-color);
+            border-radius: var(--radius);
+            padding: 3rem 1.5rem;
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .filters-sidebar {
             position: sticky;
             top: 2rem;
+            min-width: 0;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            background-color: var(--bg-card);
+            box-shadow: var(--shadow);
         }
 
-        .filter-section {
-            margin-bottom: 1.5rem;
-        }
+        .filter-section { margin-bottom: 1.5rem; }
+        .filter-section:last-child { margin-bottom: 0; }
 
         .filter-section h3 {
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--text-muted);
             margin-bottom: 0.75rem;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
         }
 
         .filter-options {
@@ -150,358 +288,393 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 0.75rem;
             width: 100%;
-            padding: 0.6rem 0.8rem;
-            background-color: var(--bg-primary);
             border: 1px solid var(--border-color);
             border-radius: 8px;
-            text-align: left;
+            padding: 0.6rem 0.8rem;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
             font-size: 0.9rem;
             font-weight: 500;
-            color: var(--text-main);
+            text-align: left;
             cursor: pointer;
             transition: var(--transition);
         }
 
-        .filter-btn:hover, .filter-btn.active {
+        .filter-btn:hover,
+        .filter-btn.active {
+            border-color: var(--primary);
             background-color: var(--primary);
             color: white;
-            border-color: var(--primary);
+        }
+
+        .filter-btn:focus-visible {
+            outline: 3px solid rgba(59, 130, 246, 0.25);
+            outline-offset: 2px;
         }
 
         .filter-btn .count {
-            font-size: 0.75rem;
-            background-color: rgba(0, 0, 0, 0.05);
-            padding: 0.1rem 0.4rem;
+            flex: 0 0 auto;
+            min-width: 24px;
             border-radius: 10px;
+            padding: 0.1rem 0.4rem;
+            background-color: rgba(0, 0, 0, 0.06);
+            font-size: 0.75rem;
+            text-align: center;
         }
 
-        .filter-btn.active .count {
-            background-color: rgba(255, 255, 255, 0.2);
+        .filter-btn.active .count,
+        .filter-btn:hover .count { background-color: rgba(255, 255, 255, 0.2); }
+
+        .search-section {
+            margin-bottom: 1.75rem;
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 10px;
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(59, 130, 246, 0.04));
         }
 
-        /* Grille des Cartes Acteurs */
-        .actors-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
+        .search-label {
+            display: block;
+            margin-bottom: 0.65rem;
+            color: #1e40af;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
         }
 
-        .actor-card {
-            background-color: var(--bg-card);
+        .search-wrapper { position: relative; }
+
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 0.85rem;
+            transform: translateY(-50%);
+            color: var(--primary);
+            line-height: 1;
+            pointer-events: none;
+        }
+
+        .search-input {
+            width: 100%;
+            min-height: 48px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            outline: none;
+            padding: 0.75rem 2.5rem 0.75rem 2.6rem;
+            background-color: #ffffff;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-dark);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.18);
+        }
+
+        .clear-search {
+            position: absolute;
+            top: 50%;
+            right: 0.65rem;
+            display: none;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            background-color: var(--border-color);
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .clear-search.visible {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .clear-search:hover { background-color: #cbd5e1; color: var(--text-main); }
+
+        .search-help {
+            margin-top: 0.55rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+
+        .reset-filters-btn {
+            width: 100%;
+            margin-top: 1rem;
             border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            box-shadow: var(--shadow);
+            border-radius: 8px;
+            padding: 0.65rem 0.8rem;
+            background-color: white;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
             cursor: pointer;
             transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
-        .actor-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        .reset-filters-btn:hover {
+            border-color: var(--primary);
+            background-color: var(--primary-light);
+            color: var(--primary-dark);
         }
 
-        .actor-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 6px;
-            height: 100%;
-        }
-
-        .actor-card.opposed::before { background-color: var(--color-opposed); }
-        .actor-card.favorable::before { background-color: var(--color-favorable); }
-        .actor-card.neutral::before { background-color: var(--color-neutral); }
-
-        .actor-header {
-            margin-bottom: 1rem;
-        }
-
-        .actor-name {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 0.25rem;
-        }
-
-        .actor-role {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        .actor-body {
-            font-size: 0.95rem;
-            color: var(--text-main);
-            margin-bottom: 1rem;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-
-        .actor-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 0.75rem;
-            font-size: 0.8rem;
-        }
-
-        .badge {
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-            letter-spacing: 0.025em;
-        }
-
-        .badge.opposed { background-color: var(--color-opposed-light); color: var(--color-opposed); }
-        .badge.favorable { background-color: var(--color-favorable-light); color: var(--color-favorable); }
-        .badge.neutral { background-color: var(--color-neutral-light); color: var(--color-neutral); }
-
-        .certitude {
-            color: var(--text-muted);
-            font-style: italic;
-        }
-
-        /* Modal Détails Acteur */
         .modal {
-            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
             background-color: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 1rem;
         }
 
-        .modal.active {
-            display: flex;
-        }
+        .modal.active { display: flex; }
 
         .modal-content {
-            background-color: var(--bg-card);
-            border-radius: var(--radius);
-            max-width: 600px;
-            width: 100%;
-            padding: 2rem;
-            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             position: relative;
+            width: 100%;
+            max-width: 600px;
+            max-height: calc(100vh - 2rem);
+            overflow-y: auto;
+            border-radius: var(--radius);
+            padding: 2rem;
+            background-color: var(--bg-card);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
             animation: modalAnim 0.2s ease-out;
         }
 
         @keyframes modalAnim {
-            from { transform: scale(0.95); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
 
         .close-modal {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: none;
             border: none;
+            background: none;
+            color: var(--text-muted);
             font-size: 1.5rem;
             cursor: pointer;
-            color: var(--text-muted);
         }
 
-        .modal-field {
-            margin-bottom: 1.25rem;
-        }
+        .modal-field { margin-bottom: 1.25rem; }
 
         .modal-field label {
             display: block;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            font-weight: 700;
             margin-bottom: 0.25rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
         }
 
-        .modal-field p {
-            font-size: 1rem;
-            color: var(--text-main);
+        .modal-title {
+            padding-right: 2rem;
+            font-size: 1.6rem;
+            font-weight: 700;
         }
 
         .modal-verbatim {
-            background-color: var(--bg-primary);
-            padding: 1rem;
             border-left: 4px solid var(--primary);
             border-radius: 4px;
+            padding: 1rem;
+            background-color: var(--bg-primary);
             font-style: italic;
         }
 
-        /* Styles Onglet Griefs */
+        .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+            padding-top: 1rem;
+        }
+
+        .modal-footer .modal-field { margin: 0; }
+        .modal-footer .modal-field:last-child { text-align: right; }
+
         .griefs-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
             gap: 2rem;
         }
 
-        @media (max-width: 640px) {
-            .griefs-container { grid-template-columns: 1fr; }
-        }
-
-        .grief-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 2rem;
-            box-shadow: var(--shadow);
-        }
-
-        .grief-card h2 {
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: #0f172a;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        /* Listes & Sources */
+        .grief-card,
         .list-card {
-            background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: var(--radius);
             padding: 2rem;
+            background-color: var(--bg-card);
             box-shadow: var(--shadow);
-            margin-bottom: 2rem;
         }
 
-        .list-card h2 {
-            margin-bottom: 1rem;
-            font-size: 1.4rem;
+        .grief-card h2 { margin-bottom: 1rem; color: #0f172a; font-size: 1.3rem; }
+        .list-card { margin-bottom: 2rem; }
+        .list-card h2 { margin-bottom: 1rem; font-size: 1.4rem; }
+        .list-card ul { padding-left: 1.5rem; }
+        .list-card li { margin-bottom: 0.75rem; }
+
+        @media (max-width: 1150px) {
+            .dashboard-layout { grid-template-columns: 280px minmax(0, 1fr); gap: 1.25rem; }
+            .actors-grid { gap: 1rem; }
+            .actor-card { padding: 1.25rem; }
         }
 
-        .list-card ul {
-            padding-left: 1.5rem;
+        @media (max-width: 900px) {
+            body { padding: 1.25rem; }
+            .dashboard-layout { grid-template-columns: 1fr; }
+            .filters-sidebar { grid-row: 1; position: static; }
+            .actors-area { grid-row: 2; }
+            .actors-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .filter-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
 
-        .list-card li {
-            margin-bottom: 0.75rem;
+        @media (max-width: 650px) {
+            body { padding: 1rem; }
+            header h1 { font-size: 1.75rem; }
+            .tab-btn { flex: 1 1 100%; }
+            .actors-grid,
+            .griefs-container,
+            .filter-options { grid-template-columns: 1fr; }
+            .actor-footer,
+            .modal-footer { align-items: flex-start; flex-direction: column; }
+            .certitude,
+            .modal-footer .modal-field:last-child { text-align: left; }
         }
     </style>
 </head>
-<body>
 
+<body>
     <header>
-        <h1 id="header-title">Cartographie interactive — Campus IA Fouju</h1>
-        <p id="header-subtitle">Analyse consolidée et structurée des collèges d'acteurs, forces en présence, griefs techniques et points de vigilance.</p>
+        <h1 id="header-title">Chargement...</h1>
+        <p id="header-subtitle"></p>
     </header>
 
-    <nav class="tabs">
-        <button class="tab-btn active" onclick="switchTab('carto')">Cartographie des acteurs</button>
-        <button class="tab-btn" onclick="switchTab('griefs')">Synthèse des oppositions</button>
-        <button class="tab-btn" onclick="switchTab('vigilance')">Points de vigilance &amp; sources</button>
+    <nav class="tabs" aria-label="Navigation principale">
+        <button class="tab-btn active" type="button" data-tab="carto">Cartographie des acteurs</button>
+        <button class="tab-btn" type="button" data-tab="griefs">Synthèse des oppositions</button>
+        <button class="tab-btn" type="button" data-tab="vigilance">Points de vigilance &amp; sources</button>
     </nav>
 
     <div id="tab-carto" class="tab-content active">
         <div class="dashboard-layout">
-            <aside class="filters-sidebar">
+            <aside class="filters-sidebar" aria-label="Recherche et filtres de la cartographie">
+                <div class="search-section">
+                    <label class="search-label" for="actor-search">Rechercher un acteur</label>
+
+                    <div class="search-wrapper">
+                        <span class="search-icon" aria-hidden="true">🔍</span>
+
+                        <input
+                            id="actor-search"
+                            class="search-input"
+                            type="search"
+                            placeholder="Nom, fonction, argument..."
+                            autocomplete="off"
+                            aria-describedby="search-help"
+                        >
+
+                        <button
+                            id="clear-search"
+                            class="clear-search"
+                            type="button"
+                            aria-label="Effacer la recherche"
+                            title="Effacer la recherche"
+                        >×</button>
+                    </div>
+
+                    <p id="search-help" class="search-help">
+                        Recherche dans le nom, la fonction, la position et les preuves documentaires.
+                    </p>
+                </div>
+
                 <div class="filter-section">
                     <h3>Collèges d'acteurs</h3>
-                    <div class="filter-options" id="cat-filters-container">
-                        </div>
+                    <div class="filter-options" id="cat-filters-container"></div>
                 </div>
 
                 <div class="filter-section">
                     <h3>Positionnement</h3>
-                    <div class="filter-options" id="stance-filters-container">
-                        </div>
+                    <div class="filter-options" id="stance-filters-container"></div>
                 </div>
+
+                <button class="reset-filters-btn" id="reset-filters" type="button">
+                    Réinitialiser la recherche et les filtres
+                </button>
             </aside>
 
-            <main class="actors-grid" id="actors-grid">
-                </main>
+            <main class="actors-area">
+                <div class="results-summary">
+                    <p id="results-count" class="results-count" aria-live="polite"></p>
+                </div>
+
+                <div class="actors-grid" id="actors-grid"></div>
+            </main>
         </div>
     </div>
 
     <div id="tab-griefs" class="tab-content">
-        <div class="griefs-container" id="griefs-grid">
-            <div class="grief-card">
-                <h2>⚡ Démesure énergétique &amp; Foncière</h2>
-                <p>Emprise colossale de <strong>90 hectares</strong> de terres agricoles franciliennes artificialisées. Le site projeté consommerait à terme <strong>1,4 GW (10,5 TWh)</strong>, mobilisant l'équivalent de la production de plus d'un réacteur nucléaire de dernière génération et représentant un saut d'échelle critique pour la région.</p>
-            </div>
-            <div class="grief-card">
-                <h2>🌐 Monopolisation et saturation des réseaux</h2>
-                <p>La concentration massive des demandes d'alimentation par les centres de calcul IA représente une pression sans précédent pour RTE. Cette hégémonie structurelle induit des arbitrages critiques sur l'accès et les infrastructures au détriment de l'électrification d'autres pans d'activité.</p>
-            </div>
-            <div class="grief-card">
-                <h2>☣️ Risques écologiques et industriels majeurs</h2>
-                <p>Les alertes portent sur la gestion thermique des installations, l'usage réglementé de gaz isolants à très fort effet de serre comme le SF6 dans les équipements de coupure haute tension, et les risques de non-maîtrise environnementale des fluides frigorigènes ou résidus de PFAS.</p>
-            </div>
-            <div class="grief-card">
-                <h2>📑 Contournement démocratique et réglementaire</h2>
-                <p>L'opposition fustige l'utilisation d'un cadre juridique morcelé, conçu selon elle pour lisser l'impact administratif, masquer les seuils cumulés d'emprise et contourner l'exposition réglementaire globale ou des classements plus contraignants.</p>
-            </div>
-            <div class="grief-card">
-                <h2>🔒 Souveraineté factice et ingérence étrangère</h2>
-                <p>La structure de financement par des capitaux internationaux massifs (70 % contrôlés par le fonds émirati MGX) cristallise la rupture doctrinale. Elle nourrit la contradiction d'un discours de souveraineté numérique adossé à des dépendances capitalistiques extra-européennes.</p>
-            </div>
-            <div class="grief-card">
-                <h2>💼 Mirage socio-économique</h2>
-                <p>Les syndicats contestent la balance réelle entre l'accaparement de l'infrastructure électrique territoriale et les créations nettes d'emplois locaux durables. Ils citent des précédents technologiques où les promesses de ruissellement industriel n'ont pas compensé les restructurations.</p>
-            </div>
-        </div>
+        <div class="griefs-container" id="griefs-grid"></div>
     </div>
 
     <div id="tab-vigilance" class="tab-content">
         <div class="list-card">
-            <h2>🔍 Points de vigilance majeurs (Limites et incertitudes)</h2>
-            <ul id="vigilance-list">
-                </ul>
+            <h2>🔍 Points de vigilance majeurs</h2>
+            <ul id="vigilance-list"></ul>
         </div>
 
         <div class="list-card">
             <h2>📰 Médias et sources d'investigation répertoriés</h2>
-            <ul id="sources-list">
-                </ul>
+            <ul id="sources-list"></ul>
         </div>
     </div>
 
-    <div class="modal" id="actor-modal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button class="close-modal" onclick="toggleModal(false)">×</button>
+    <div class="modal" id="actor-modal" role="dialog" aria-modal="true" aria-labelledby="modal-name">
+        <div class="modal-content">
+            <button class="close-modal" id="close-modal" type="button" aria-label="Fermer la fenêtre">×</button>
+
             <div class="modal-field">
                 <label>Nom / Entité</label>
-                <h2 id="modal-name" style="font-size:1.6rem; font-weight:700;"></h2>
+                <h2 id="modal-name" class="modal-title"></h2>
             </div>
+
             <div class="modal-field">
                 <label>Fonction / Rattachement</label>
                 <p id="modal-role"></p>
             </div>
+
             <div class="modal-field">
-                <label>Positionnement ou Argument Principal</label>
+                <label>Positionnement ou argument principal</label>
                 <p id="modal-position"></p>
             </div>
+
             <div class="modal-field">
                 <label>Verbatim / Preuve documentaire</label>
                 <p id="modal-verbatim" class="modal-verbatim"></p>
             </div>
-            <div style="display: flex; justify-content: space-between; margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                <div class="modal-field" style="margin:0;">
+
+            <div class="modal-footer">
+                <div class="modal-field">
                     <label>Orientation</label>
                     <span id="modal-stance-badge" class="badge"></span>
                 </div>
-                <div class="modal-field" style="margin:0; text-align: right;">
+
+                <div class="modal-field">
                     <label>Niveau de certitude</label>
                     <p id="modal-certainty" class="certitude"></p>
                 </div>
@@ -510,7 +683,6 @@
     </div>
 
     <script>
-        // Injection directe de votre base de données consolidée
         const projectData = {
             meta: {
                 title: "Cartographie Interactive — Campus IA Fouju",
@@ -605,22 +777,27 @@
                 { name: "Giuliano Del Negro", category: "opposants", stance: "neutral", role: "Habitant", position: "S'inquiète de l'urbanisation collatérale induite et des nuisances en phase chantier.", evidence: "On aimerait bien que Fouju reste comme ça.", certainty: "Moyenne" },
                 { name: "Laurent", category: "opposants", stance: "favorable", role: "Habitant", position: "Soutient activement le projet pour ses promesses de dynamisation financière.", evidence: "Ça va générer de l’argent et de l’emploi.", certainty: "Haute" },
                 { name: "Jean-Noël Péché", category: "opposants", stance: "opposed", role: "Apiculteur", position: "Déplore la perte injustifiée de terres agricoles utiles au profit de l'infrastructure numérique.", evidence: "Et là, on en crame 70 hectares pour rien.", certainty: "Haute" }, 
-                { name: "Jonathan Wochenmayer", category: "elus-fav", stance: "favorable", role: "Maire sans étiquette de Fouju", position: "Soutient fortement le Campus IA en raison des recettes foncières attendues, qui représenteraient plusieurs millions d’euros et dépasseraient très largement le budget annuel de la commune.", evidence: "Le budget annuel de Fouju est présenté à 650 000 euros, tandis que le projet pourrait générer plusieurs millions d’euros de recettes foncières.", certainty: "Haute" },
-                { name: "Maxime Colin", category: "opposants", stance: "opposed", role: "Membre de France Nature Environnement, rattaché dans la base à FNE Île-de-France", position: "Dénonce l’accaparement de terres agricoles et les tensions disproportionnées que le campus ferait peser sur la ressource électrique.", evidence: "« On n’a pas besoin d’accaparer autant de terres agricoles, de créer autant de tensions sur la ressource électrique. »", certainty: "Haute" },
-                { name: "Pauline Isambert", category: "opposants", stance: "opposed", role: "Élue de la Confédération paysanne Île-de-France et initiatrice de la mobilisation agricole selon France 3", position: "Combat l’artificialisation des terres agricoles, critique l’absence de concertation et affirme que la deuxième phase prévoit un prélèvement dans la nappe phréatique pour le refroidissement.", evidence: "« Dans la deuxième phase du projet, ils vont quand même pomper dans la nappe phréatique pour refroidir les machines. »", certainty: "Haute" },
-                { name: "Céline Malaisé", category: "elus-opp", stance: "opposed", role: "Conseillère régionale d’Île-de-France et présidente du groupe Gauche communiste, écologiste et citoyenne", position: "Qualifie le campus de projet hors normes, critique la rapidité du calendrier et se déclare prête à soutenir d’éventuels recours en justice.", evidence: "Dans un communiqué du 26 août, elle appelle à poursuivre la contestation et propose son soutien à d’éventuels recours.", certainty: "Haute" },
-                { name: "Stop Campus IA", category: "orgs", stance: "opposed", role: "Collectif d’opposition locale coordonnant mobilisation, information citoyenne et stratégie contentieuse", position: "Change d’échelle grâce à une pétition dépassant 50 000 signatures, à une rencontre citoyenne organisée le 29 août à Melun et à la préparation de possibles recours avec d’autres associations.", evidence: "La rencontre citoyenne du 29 août intervient après une pétition ayant recueilli plus de 50 000 signatures.", certainty: "Haute" },
-                { name: "Pierre Ory", category: "elus-fav", stance: "favorable", role: "Préfet de Seine-et-Marne", position: "A autorisé les premières infrastructures du Campus IA le 29 juillet 2026, après une enquête publique conduite du 30 avril au 30 mai et des avis favorables sans réserve de la commission d’enquête.", evidence: "Le préfet de Seine-et-Marne a autorisé la construction des premières infrastructures le 29 juillet 2026.", certainty: "Haute" },
-                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire du réseau de transport d’électricité chargé du raccordement progressif du Campus IA", position: "Prévoit un premier palier de raccordement de 240 MW d’ici fin 2027, puis 700 MW avant fin 2029, avec une infrastructure conçue pour permettre une montée ultérieure jusqu’à 1 400 MW.", evidence: "Le raccordement doit progresser de 240 MW à 700 MW avant de pouvoir atteindre à terme 1 400 MW.", certainty: "Haute" }, 
-                { name: "Evelyne Michel", category: "opposants", stance: "opposed", role: "Riveraine du hameau des Bordes à Crisenoy", position: "Redoute le bruit, les nuisances visuelles et les risques de pollution du campus situé derrière son habitation, au point d’envisager que le projet puisse la contraindre à déménager.", evidence: "« Il sera vraiment juste derrière ma maison. (...) Le jour où le vent est dominant, vous entendez très bien le bruit. »", certainty: "Haute" },
-                { name: "Manuel Sirera", category: "elus-fav", stance: "neutral", role: "Maire de Crisenoy", position: "Exprime une vigilance particulière concernant les impacts du projet sur les habitants de la commune la plus directement voisine, notamment les nuisances et les risques environnementaux.", evidence: "Le reportage de TF1 indique que le maire de Crisenoy est particulièrement sensible aux inquiétudes entourant le projet.", certainty: "Moyenne" },
-                { name: "Michael Reffay", category: "porteurs", stance: "favorable", role: "Délégué général de France Datacenter", position: "Défend le campus comme une infrastructure de souveraineté permettant d’héberger en France des données personnelles, économiques et administratives actuellement stockées à l’étranger.", evidence: "Il présente le Campus IA comme une capacité destinée à rapatrier et héberger en France des données aujourd’hui stockées à l’étranger.", certainty: "Moyenne" },
-                { name: "France Datacenter", category: "porteurs", stance: "favorable", role: "Organisation professionnelle représentant la filière française des centres de données", position: "Soutient le développement d’infrastructures nationales de calcul et de stockage au nom de la souveraineté numérique et de la localisation des données.", evidence: "Son délégué général intervient dans le reportage pour défendre l’intérêt national du Campus IA.", certainty: "Moyenne" },
-                { name: "Terres de luttes", category: "orgs", stance: "opposed", role: "Réseau national de convergence des mobilisations contre les grands projets d’aménagement", position: "Intègre le Campus IA de Fouju dans une mobilisation nationale contre les mégaprojets, l’artificialisation et le bétonnage de terres agricoles.", evidence: "Le réseau cite Fouju parmi les « mégaprojets et terres promises au béton ».", certainty: "Haute" },
-                { name: "Data Center Watch", category: "orgs", stance: "neutral", role: "Institut de suivi des centres de données et de leurs contestations", position: "Fournit un point de comparaison international sur la capacité des oppositions locales à retarder ou bloquer des projets de centres de données.", evidence: "Au moins 75 projets auraient été bloqués ou retardés entre janvier et mars 2026, pour près de 130 milliards de dollars d’investissements.", certainty: "Moyenne" }
-                
+                { name: "Jonathan Wochenmayer", category: "elus-fav", stance: "favorable", role: "Maire sans étiquette de Fouju", position: "Soutient fortement le Campus IA en raison des recettes foncières attendues, qui représenteraient plusieurs millions d’euros.", evidence: "Le budget annuel de Fouju est présenté à 650 000 euros, tandis que le projet pourrait générer plusieurs millions d’euros de recettes foncières.", certainty: "Haute" },
+                { name: "Maxime Colin", category: "opposants", stance: "opposed", role: "Membre de FNE Île-de-France", position: "Dénonce l’accaparement de terres agricoles et les tensions disproportionnées que le campus ferait peser sur la ressource électrique.", evidence: "« On n’a pas besoin d’accaparer autant de terres agricoles, de créer autant de tensions sur la ressource électrique. »", certainty: "Haute" },
+                { name: "Pauline Isambert", category: "opposants", stance: "opposed", role: "Élue de la Confédération paysanne Île-de-France", position: "Combat l’artificialisation des terres agricoles, critique l’absence de concertation et affirme que la deuxième phase prévoit un prélèvement dans la nappe phréatique.", evidence: "« Dans la deuxième phase du projet, ils vont quand même pomper dans la nappe phréatique pour refroidir les machines. »", certainty: "Haute" },
+                { name: "Céline Malaisé", category: "elus-opp", stance: "opposed", role: "Conseillère régionale d’Île-de-France", position: "Qualifie le campus de projet hors normes, critique la rapidité du calendrier et se déclare prête à soutenir d’éventuels recours en justice.", evidence: "Dans un communiqué du 26 août, elle appelle à poursuivre la contestation.", certainty: "Haute" },
+                { name: "Stop Campus IA", category: "orgs", stance: "opposed", role: "Collectif d’opposition locale", position: "Change d’échelle grâce à une pétition dépassant 50 000 signatures, à une rencontre citoyenne organisée à Melun et à la préparation de recours.", evidence: "La rencontre citoyenne intervient après une pétition ayant recueilli plus de 50 000 signatures.", certainty: "Haute" },
+                { name: "Pierre Ory", category: "elus-fav", stance: "favorable", role: "Préfet de Seine-et-Marne", position: "A autorisé les premières infrastructures du Campus IA le 29 juillet 2026, après avis favorables de la commission d’enquête.", evidence: "Le préfet a autorisé la construction des premières infrastructures le 29 juillet 2026.", certainty: "Haute" },
+                { name: "RTE", category: "porteurs", stance: "neutral", role: "Gestionnaire du réseau de transport d’électricité", position: "Prévoit un premier palier de raccordement de 240 MW d’ici fin 2027, puis 700 MW avant fin 2029.", evidence: "Le raccordement doit progresser de 240 MW à 700 MW avant de pouvoir atteindre à terme 1 400 MW.", certainty: "Haute" }, 
+                { name: "Evelyne Michel", category: "opposants", stance: "opposed", role: "Riveraine du hameau des Bordes à Crisenoy", position: "Redoute le bruit, les nuisances visuelles et les risques de pollution du campus situé derrière son habitation.", evidence: "« Il sera vraiment juste derrière ma maison. (...) Le jour où le vent est dominant, vous entendez très bien le bruit. »", certainty: "Haute" },
+                { name: "Manuel Sirera", category: "elus-fav", stance: "neutral", role: "Maire de Crisenoy", position: "Exprime une vigilance particulière concernant les impacts du projet sur les habitants de la commune.", evidence: "Le maire de Crisenoy est particulièrement sensible aux inquiétudes entourant le projet.", certainty: "Moyenne" },
+                { name: "Michael Reffay", category: "porteurs", stance: "favorable", role: "Délégué général de France Datacenter", position: "Défend le campus comme une infrastructure de souveraineté permettant d’héberger en France des données actuellement stockées à l’étranger.", evidence: "Il présente le Campus IA comme une capacité destinée à rapatrier en France des données.", certainty: "Moyenne" },
+                { name: "France Datacenter", category: "porteurs", stance: "favorable", role: "Organisation professionnelle de la filière", position: "Soutient le développement d’infrastructures nationales de calcul et de stockage au nom de la souveraineté numérique.", evidence: "Son délégué général intervient pour défendre l’intérêt national du Campus IA.", certainty: "Moyenne" },
+                { name: "Terres de luttes", category: "orgs", stance: "opposed", role: "Réseau national de convergence des mobilisations", position: "Intègre le Campus IA de Fouju dans une mobilisation nationale contre les mégaprojets.", evidence: "Le réseau cite Fouju parmi les « mégaprojets et terres promises au béton ».", certainty: "Haute" },
+                { name: "Data Center Watch", category: "orgs", stance: "neutral", role: "Institut de suivi des centres de données", position: "Fournit un point de comparaison international sur la capacité des oppositions locales à retarder ou bloquer des projets.", evidence: "Au moins 75 projets auraient été bloqués ou retardés entre janvier et mars 2026.", certainty: "Moyenne" }
             ],
             griefs: [
+                { title: "⚡ Démesure énergétique & Foncière", text: "Emprise colossale de 90 hectares de terres agricoles franciliennes artificialisées. Le site projeté consommerait à terme 1,4 GW (10,5 TWh), mobilisant l'équivalent de la production de plus d'un réacteur nucléaire de dernière génération et représentant un saut d'échelle critique pour la région." },
+                { title: "🌐 Monopolisation et saturation des réseaux", text: "La concentration massive des demandes d'alimentation par les centres de calcul IA représente une pression sans précédent pour RTE. Cette hégémonie structurelle induit des arbitrages critiques sur l'accès et les infrastructures au détriment de l'électrification d'autres pans d'activité." },
+                { title: "☣️ Risques écologiques et industriels majeurs", text: "Les alertes portent sur la gestion thermique des installations, l'usage réglementé de gaz isolants à très fort effet de serre comme le SF6 dans les équipements de coupure haute tension, et les risques de non-maîtrise environnementale des fluides frigorigènes ou résidus de PFAS." },
+                { title: "📑 Contournement démocratique et réglementaire", text: "L'opposition fustige l'utilisation d'un cadre juridique morcelé, conçu selon elle pour lisser l'impact administratif, masquer les seuils cumulés d'emprise et contourner l'exposition réglementaire globale ou des classements plus contraignants." },
+                { title: "🔒 Souveraineté factice et ingérence étrangère", text: "La structure de financement par des capitaux internationaux massifs (70 % contrôlés par le fonds émirati MGX) cristallise la rupture doctrinale. Elle nourrit la contradiction d'un discours de souveraineté numérique adossé à des dépendances capitalistiques extra-européennes." },
+                { title: "💼 Mirage socio-économique", text: "Les syndicats contestent la balance réelle entre l'accaparement de l'infrastructure électrique territoriale et les créations nettes d'emplois locaux durables. Ils citent des précédents technologiques où les promesses de ruissellement industriel n'ont pas compensé les restructurations." },
                 { title: "🌡️ Îlots de chaleur numériques", text: "L'exploitation des centres de calcul menace de générer un 'panache de chaleur', augmentant la température de 2°C dans un rayon de 10 km et aggravant le stress végétal et humain." },
                 { title: "💨 Rejets massifs de polluants atmosphériques (NOx)", text: "La seule maintenance obligatoire des 613 groupes électrogènes diesel entraînerait une hausse drastique de 3 % des émissions nationales d'oxydes d'azote." },
                 { title: "🏰 Néo-féodalisme foncier", text: "Le gigantisme du projet est analysé comme un accaparement agressif par les géants de la tech de terres agricoles stratégiques, privant la profession d'un accès vital au sol." }, 
@@ -629,8 +806,7 @@
                 { title: "💧 Prélèvement en nappe durant la deuxième phase", text: "La Confédération paysanne affirme que l’arrêté préfectoral permettrait un prélèvement dans la nappe phréatique lors de la seconde phase, alors que la communication initiale aurait minimisé ou exclu cette hypothèse." },
                 { title: "⚖️ Contestation désormais contentieuse", text: "Après l’autorisation préfectorale du 29 juillet 2026, les opposants préparent de possibles recours et cherchent à transformer une population décrite comme perplexe ou fataliste en mobilisation structurée." },
                 { title: "💰 Dépendance fiscale communale", text: "Les recettes foncières attendues représenteraient plusieurs fois le budget annuel de Fouju, créant un écart majeur entre l’intérêt financier direct de la commune et les impacts supportés à une échelle territoriale plus large." }
-    ],
-            
+            ],
             vigilance: [
                 "<strong>Gouvernance et Secret des affaires :</strong> Thibaud Desfossés (MGX) refuse de détailler la structure de gouvernance du projet et se mure derrière le secret des affaires.",
                 "<strong>Incertitudes des Consommations :</strong> Flou persistant entourant les volumes réels de consommation en eau et l'emprise foncière exacte, dénoncé par les organisations agricoles.",
@@ -650,7 +826,6 @@
                 "<strong>Rattachements associatifs :</strong> Vérifier les rattachements exacts de Maxime Colin et Pauline Isambert entre structures départementales et régionales.",
                 "<strong>Mistral AI :</strong> La formulation de TF1 selon laquelle le projet est financé en partie par Mistral ne permet pas de déterminer sa participation capitalistique exacte.",
                 "<strong>Mise en service autour de 2028 :</strong> L’échéance annoncée publiquement paraît correspondre à une première capacité partielle, et non à l’exploitation complète des onze bâtiments."
-                
             ],
             sources: [
                 "<strong>Le Chiffon :</strong> Journal militant francilien ayant organisé des soirées-débats 'Contre les data centers et leur monde'.",
@@ -669,148 +844,288 @@
             ]
         };
 
-        // États de filtrage croisé globaux
-        let activeCategory = 'all';
-        let activeStance = 'all';
+        let activeCategory = "all";
+        let activeStance = "all";
+        let searchTerm = "";
+        let lastFocusedElement = null;
 
-        // Initialisation de l'application
-        document.addEventListener("DOMContentLoaded", () => {
-            // Configuration des en-têtes
-            document.getElementById('header-title').innerText = projectData.meta.title;
-            document.getElementById('header-subtitle').innerText = projectData.meta.subtitle;
-
-            // Rendu dynamique des filtres et listes annexes
-            renderFilters();
-            renderGrid();
-            renderLists();
-        });
-
-        // Commutation des onglets principaux
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
-            event.target.classList.add('active');
-            document.getElementById(`tab-${tabName}`).classList.add('active');
+        function normalizeText(value) {
+            return String(value || "")
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .trim();
         }
 
-        // Construction des éléments de filtrage avec calcul automatique
+        function getFilteredActors() {
+            return projectData.actors.filter(actor => {
+                const matchCategory = activeCategory === "all" || actor.category === activeCategory;
+                const matchStance = activeStance === "all" || actor.stance === activeStance;
+                const searchableText = normalizeText([
+                    actor.name,
+                    actor.role,
+                    actor.position,
+                    actor.evidence,
+                    actor.certainty
+                ].join(" "));
+                const matchSearch = searchTerm === "" || searchableText.includes(searchTerm);
+
+                return matchCategory && matchStance && matchSearch;
+            });
+        }
+
         function renderFilters() {
-            const catContainer = document.getElementById('cat-filters-container');
-            const stanceContainer = document.getElementById('stance-filters-container');
-            
-            catContainer.innerHTML = '';
-            stanceContainer.innerHTML = '';
+            const catContainer = document.getElementById("cat-filters-container");
+            const stanceContainer = document.getElementById("stance-filters-container");
 
-            // 1. Boutons de catégorie
+            catContainer.innerHTML = "";
+            stanceContainer.innerHTML = "";
+
             Object.entries(projectData.taxonomy.categories).forEach(([key, label]) => {
-                const count = key === 'all' ? projectData.actors.length : projectData.actors.filter(a => a.category === key).length;
-                const activeClass = key === activeCategory ? 'active' : '';
-                catContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setCategoryFilter('${key}', this)">
-                        <span>${label}</span> <span class="count">${count}</span>
-                    </button>
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.category === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeCategory ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeCategory));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
                 `;
+                button.addEventListener("click", () => {
+                    activeCategory = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                catContainer.appendChild(button);
             });
 
-            // 2. Boutons d'orientation
             Object.entries(projectData.taxonomy.stances).forEach(([key, label]) => {
-                const activeClass = key === activeStance ? 'active' : '';
-                stanceContainer.innerHTML += `
-                    <button class="filter-btn ${activeClass}" onclick="setStanceFilter('${key}', this)">
-                        <span>${label}</span>
-                    </button>
+                const count = key === "all"
+                    ? projectData.actors.length
+                    : projectData.actors.filter(actor => actor.stance === key).length;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = `filter-btn ${key === activeStance ? "active" : ""}`;
+                button.setAttribute("aria-pressed", String(key === activeStance));
+                button.innerHTML = `
+                    <span>${label}</span>
+                    <span class="count">${count}</span>
                 `;
+                button.addEventListener("click", () => {
+                    activeStance = key;
+                    renderFilters();
+                    renderGrid();
+                });
+
+                stanceContainer.appendChild(button);
             });
         }
 
-        function setCategoryFilter(category, el) {
-            document.querySelectorAll('#cat-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            activeCategory = category;
-            renderGrid();
-        }
-
-        function setStanceFilter(stance, el) {
-            document.querySelectorAll('#stance-filters-container .filter-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            activeStance = stance;
-            renderGrid();
-        }
-
-        // Rendu dynamique de la grille filtrée des acteurs
         function renderGrid() {
-            const grid = document.getElementById('actors-grid');
-            grid.innerHTML = '';
+            const grid = document.getElementById("actors-grid");
+            const resultsCount = document.getElementById("results-count");
+            const filteredActors = getFilteredActors();
 
-            const filteredActors = projectData.actors.filter(actor => {
-                const matchCategory = (activeCategory === 'all' || actor.category === activeCategory);
-                const matchStance = (activeStance === 'all' || actor.stance === activeStance);
-                return matchCategory && matchStance;
-            });
+            resultsCount.textContent = `${filteredActors.length} acteur${filteredActors.length > 1 ? "s" : ""} affiché${filteredActors.length > 1 ? "s" : ""} sur ${projectData.actors.length}`;
+            grid.innerHTML = "";
 
             if (filteredActors.length === 0) {
-                grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 3rem; color: var(--text-muted); font-weight: 500;">Aucun acteur ne correspond à ce croisement de filtres.</div>`;
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        Aucun acteur ne correspond à votre recherche et aux filtres sélectionnés.
+                    </div>
+                `;
                 return;
             }
 
             filteredActors.forEach(actor => {
-                const card = document.createElement('div');
+                const card = document.createElement("article");
                 card.className = `actor-card ${actor.stance}`;
-                card.onclick = () => openActorModal(actor);
+                card.tabIndex = 0;
+                card.setAttribute("role", "button");
+                card.setAttribute("aria-label", `Ouvrir la fiche de ${actor.name}`);
 
                 card.innerHTML = `
-                    <div class="actor-header">
-                        <div class="actor-name">${actor.name}</div>
-                        <div class="actor-role">${actor.role}</div>
+                    <div>
+                        <div class="actor-header">
+                            <div class="actor-name">${actor.name}</div>
+                            <div class="actor-role">${actor.role}</div>
+                        </div>
+
+                        <div class="actor-body">${actor.position}</div>
                     </div>
-                    <div class="actor-body">${actor.position}</div>
+
                     <div class="actor-footer">
-                        <span class="badge ${actor.stance}">${projectData.taxonomy.stances[actor.stance]}</span>
-                        <span class="certitude">Certitude : ${actor.certainty}</span>
+                        <span class="badge ${actor.stance}">
+                            ${projectData.taxonomy.stances[actor.stance]}
+                        </span>
+
+                        <span class="certitude">
+                            Certitude : ${actor.certainty}
+                        </span>
                     </div>
                 `;
+
+                card.addEventListener("click", () => openActorModal(actor));
+                card.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openActorModal(actor);
+                    }
+                });
+
                 grid.appendChild(card);
             });
         }
 
-        // Rendu des listes statiques de l'onglet 3
-        function renderLists() {
-            const vigList = document.getElementById('vigilance-list');
-            const srcList = document.getElementById('sources-list');
+        function renderGriefs() {
+            const container = document.getElementById("griefs-grid");
+            container.innerHTML = "";
 
-            vigList.innerHTML = '';
-            srcList.innerHTML = '';
+            if (projectData.griefs.length === 0) {
+                container.innerHTML = `<div class="empty-state">Aucun grief formellement identifié dans cette extraction.</div>`;
+                return;
+            }
 
-            projectData.vigilance.forEach(item => vigList.innerHTML += `<li>${item}</li>`);
-            projectData.sources.forEach(item => srcList.innerHTML += `<li>${item}</li>`);
+            projectData.griefs.forEach(grief => {
+                const card = document.createElement("article");
+                card.className = "grief-card";
+                card.innerHTML = `
+                    <h2>${grief.title}</h2>
+                    <p>${grief.text}</p>
+                `;
+                container.appendChild(card);
+            });
         }
 
-        // Fenêtre modale : Affichage et hydratation
-        function openActorModal(actor) {
-            document.getElementById('modal-name').innerText = actor.name;
-            document.getElementById('modal-role').innerText = actor.role;
-            document.getElementById('modal-position').innerText = actor.position;
-            document.getElementById('modal-verbatim').innerText = actor.evidence || "Aucun verbatim direct extrait.";
-            document.getElementById('modal-certainty').innerText = actor.certainty;
+        function renderLists() {
+            const vigilanceList = document.getElementById("vigilance-list");
+            const sourcesList = document.getElementById("sources-list");
 
-            const badge = document.getElementById('modal-stance-badge');
+            vigilanceList.innerHTML = "";
+            sourcesList.innerHTML = "";
+
+            if (projectData.vigilance.length === 0) {
+                vigilanceList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucun point de vigilance identifié.</li>`;
+            } else {
+                projectData.vigilance.forEach(item => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = item;
+                    vigilanceList.appendChild(listItem);
+                });
+            }
+
+            if (projectData.sources.length === 0) {
+                sourcesList.innerHTML = `<li style="color: var(--text-muted); list-style: none;">Aucune source identifiée.</li>`;
+            } else {
+                projectData.sources.forEach(item => {
+                    const listItem = document.createElement("li");
+                    listItem.innerHTML = item;
+                    sourcesList.appendChild(listItem);
+                });
+            }
+        }
+
+        function switchTab(tabName, button) {
+            document.querySelectorAll(".tab-btn").forEach(tabButton => {
+                tabButton.classList.remove("active");
+            });
+
+            document.querySelectorAll(".tab-content").forEach(content => {
+                content.classList.remove("active");
+            });
+
+            button.classList.add("active");
+            document.getElementById(`tab-${tabName}`).classList.add("active");
+        }
+
+        function openActorModal(actor) {
+            lastFocusedElement = document.activeElement;
+
+            document.getElementById("modal-name").textContent = actor.name;
+            document.getElementById("modal-role").textContent = actor.role;
+            document.getElementById("modal-position").textContent = actor.position;
+            document.getElementById("modal-verbatim").textContent = actor.evidence || "Aucun verbatim direct extrait dans le corpus.";
+            document.getElementById("modal-certainty").textContent = actor.certainty;
+
+            const badge = document.getElementById("modal-stance-badge");
             badge.className = `badge ${actor.stance}`;
-            badge.innerText = projectData.taxonomy.stances[actor.stance];
+            badge.textContent = projectData.taxonomy.stances[actor.stance];
 
             toggleModal(true);
         }
 
         function toggleModal(show) {
-            const modal = document.getElementById('actor-modal');
-            modal.classList.toggle('active', show);
-        }
+            const modal = document.getElementById("actor-modal");
+            modal.classList.toggle("active", show);
+            document.body.style.overflow = show ? "hidden" : "";
 
-        function closeModal(event) {
-            if (event.target.id === 'actor-modal') {
-                toggleModal(false);
+            if (show) {
+                document.getElementById("close-modal").focus();
+            } else if (lastFocusedElement) {
+                lastFocusedElement.focus();
             }
         }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            document.getElementById("header-title").textContent = projectData.meta.title;
+            document.getElementById("header-subtitle").textContent = projectData.meta.subtitle;
+
+            renderFilters();
+            renderGrid();
+            renderGriefs();
+            renderLists();
+
+            document.querySelectorAll(".tab-btn").forEach(button => {
+                button.addEventListener("click", () => switchTab(button.dataset.tab, button));
+            });
+
+            const searchInput = document.getElementById("actor-search");
+            const clearButton = document.getElementById("clear-search");
+
+            searchInput.addEventListener("input", () => {
+                searchTerm = normalizeText(searchInput.value);
+                clearButton.classList.toggle("visible", searchTerm !== "");
+                renderGrid();
+            });
+
+            clearButton.addEventListener("click", () => {
+                searchInput.value = "";
+                searchTerm = "";
+                clearButton.classList.remove("visible");
+                renderGrid();
+                searchInput.focus();
+            });
+
+            document.getElementById("reset-filters").addEventListener("click", () => {
+                activeCategory = "all";
+                activeStance = "all";
+                searchTerm = "";
+                searchInput.value = "";
+                clearButton.classList.remove("visible");
+                renderFilters();
+                renderGrid();
+            });
+
+            document.getElementById("close-modal").addEventListener("click", () => toggleModal(false));
+
+            document.getElementById("actor-modal").addEventListener("click", event => {
+                if (event.target.id === "actor-modal") {
+                    toggleModal(false);
+                }
+            });
+
+            document.addEventListener("keydown", event => {
+                if (event.key === "Escape" && document.getElementById("actor-modal").classList.contains("active")) {
+                    toggleModal(false);
+                }
+            });
+        });
     </script>
 </body>
 </html>
