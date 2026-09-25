@@ -137,29 +137,29 @@
         }
 
         .actors-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 1.5rem;
-            align-items: stretch;
-            min-width: 0;
-        }
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 1rem;
+    align-items: stretch;
+    min-width: 0;
+}
 
-        .actor-card {
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-width: 0;
-            min-height: 240px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            background-color: var(--bg-card);
-            box-shadow: var(--shadow);
-            cursor: pointer;
-            transition: var(--transition);
-        }
+.actor-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+    min-height: 220px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    background-color: var(--bg-card);
+    box-shadow: var(--shadow);
+    cursor: pointer;
+    transition: var(--transition);
+}
 
         .actor-card:hover {
             transform: translateY(-4px);
