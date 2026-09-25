@@ -750,6 +750,10 @@ function renderLists(){const vig=document.getElementById('vigilance-list'),src=d
 function openActorModal(actor){document.getElementById('modal-name').innerText=actor.name;document.getElementById('modal-role').innerText=actor.role;document.getElementById('modal-position').innerText=actor.position;document.getElementById('modal-verbatim').innerText=actor.evidence||'Aucun verbatim direct extrait dans le corpus.';document.getElementById('modal-certainty').innerText=actor.certainty;const badge=document.getElementById('modal-stance-badge');badge.className=`badge ${actor.stance}`;badge.innerText=projectData.taxonomy.stances[actor.stance];toggleModal(true);}
 function toggleModal(show){document.getElementById('actor-modal').classList.toggle('active',show);document.body.style.overflow=show?'hidden':'';}
 function closeModal(event){if(event.target.id==='actor-modal')toggleModal(false);}
+document.getElementById('close-modal').addEventListener('click', () => toggleModal(false));
+document.getElementById('actor-modal').addEventListener('click', event => {
+    if (event.target === event.currentTarget) toggleModal(false);
+});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')toggleModal(false);});
 </script>
 </body>
