@@ -1,0 +1,876 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Cartographie stratégique — Acteurs Campus IA Fouju</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-color: #e2e8f0;
+    --panel-bg: rgba(255, 255, 255, 0.85);
+    --panel-border: rgba(255, 255, 255, 0.4);
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --accent: #3b82f6;
+    --shadow-soft: 0 10px 40px -10px rgba(15, 23, 42, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+  body { 
+    margin: 0; 
+    font-family: 'Inter', system-ui, sans-serif; 
+    background-color: var(--bg-color); 
+    color: var(--text-main); 
+    height: 100vh; 
+    overflow: hidden;
+  }
+
+  /* --- Canvas SVG Background --- */
+  #app-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at 50% 50%, #f8fafc 0%, #cbd5e1 100%);
+  }
+
+  /* Dot pattern overlay */
+  #app-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(#94a3b8 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.3;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  #chart {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    cursor: grab;
+  }
+  #chart:active { cursor: grabbing; }
+  svg { width: 100%; height: 100%; display: block; }
+
+  /* --- Floating Panels (Glassmorphism) --- */
+  .panel {
+    position: absolute;
+    background: var(--panel-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--panel-border);
+    border-radius: 20px;
+    box-shadow: var(--shadow-soft);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+  }
+
+  /* Left Sidebar: Controls */
+  #sidebar-left {
+    top: 20px;
+    left: 20px;
+    width: 340px;
+    padding: 24px;
+    gap: 20px;
+  }
+
+  /* Right Sidebar: Details */
+  #sidebar-right {
+    top: 20px;
+    right: 20px;
+    width: 380px;
+    padding: 28px;
+    transform: translateX(120%); /* Hidden by default */
+    opacity: 0;
+    pointer-events: none;
+    overflow-y: auto;
+  }
+  #sidebar-right.active {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* --- Typography & Header --- */
+  header h1 {
+    margin: 0 0 6px 0;
+    font-size: 18px;
+    font-weight: 800;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #0f172a, #334155);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  header p { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.4; }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #475569;
+    margin: 4px 0 8px 0;
+  }
+
+  /* --- Controls & Inputs --- */
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  input[type="text"]:focus {
+    border-color: var(--accent);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+  }
+
+  .btn-group { display: flex; gap: 8px; }
+  button {
+    flex: 1;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+  }
+  button:hover { background: #f8fafc; border-color: #94a3b8; transform: translateY(-1px); box-shadow: 0 4px 6px rgba(0,0,0,0.04); }
+  button:active { transform: translateY(0); box-shadow: none; }
+
+  /* --- Filters --- */
+  .filters { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; padding-right: 4px; }
+  .filters::-webkit-scrollbar { width: 4px; }
+  .filters::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+  
+  .filter-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .filter-label:hover { background: rgba(255,255,255,0.6); }
+  
+  /* Custom Checkbox */
+  .filter-label input[type="checkbox"] { display: none; }
+  .checkbox-custom {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 2px solid;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .filter-label input:checked + .checkbox-custom::after {
+    content: '';
+    width: 8px; height: 8px;
+    background: currentColor;
+    border-radius: 2px;
+  }
+  .filter-label input:not(:checked) + .checkbox-custom { border-color: #cbd5e1 !important; }
+  
+  .count-indicator {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-align: center;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+  }
+
+  /* --- Detail Panel Styles --- */
+  .close-btn {
+    position: absolute;
+    top: 20px; right: 20px;
+    background: #f1f5f9;
+    border: none;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: #475569;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .close-btn:hover { background: #e2e8f0; color: #0f172a; }
+
+  #details-content h2 { margin: 0 0 12px; font-size: 24px; font-weight: 800; padding-right: 30px; line-height: 1.1; }
+  .pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 99px; padding: 6px 14px;
+    font-size: 12px; font-weight: 700; color: #fff;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+  }
+  #details-content p { font-size: 14.5px; line-height: 1.6; color: #334155; margin: 0 0 20px; }
+  
+  .connections-box {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .conn-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
+  .conn-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .conn-tag {
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+  }
+
+  /* --- SVG Graph Elements & Transitions --- */
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: rgba(15,23,42,0.9);
+    backdrop-filter: blur(8px);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translate(-50%, -150%) scale(0.95);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    white-space: nowrap;
+    z-index: 50;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+  .tooltip.show { opacity: 1; transform: translate(-50%, -130%) scale(1); }
+
+  /* Links */
+  .link {
+    fill: none;
+    stroke: #94a3b8;
+    stroke-opacity: 0.35;
+    stroke-width: 1.5;
+    transition: stroke-opacity 0.3s, stroke-width 0.3s, stroke 0.3s;
+  }
+
+  /* Nodes */
+  .node { transition: opacity 0.3s ease; cursor: pointer; }
+  .node circle {
+    stroke: #ffffff;
+    stroke-width: 3px;
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s ease;
+    filter: drop-shadow(0 4px 8px rgba(15,23,42,0.15));
+  }
+  .node text {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    paint-order: stroke fill;
+    stroke: rgba(255,255,255,0.9);
+    stroke-width: 4px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: #1e293b;
+    pointer-events: none;
+    text-anchor: middle;
+    transition: opacity 0.3s, font-size 0.2s;
+  }
+
+  /* Interaction States managed via SVG parent class */
+  svg.is-interacting .node:not(.active) { opacity: 0.15; }
+  svg.is-interacting .link:not(.active) { stroke-opacity: 0.05; }
+  
+  .node.active circle { transform: scale(1.15); filter: drop-shadow(0 8px 16px rgba(15,23,42,0.25)); }
+  .link.active { stroke-opacity: 0.8; stroke-width: 2.5; stroke: #3b82f6; }
+  
+  .node.selected circle { stroke: #0f172a; stroke-width: 4px; }
+  
+  /* Hidden state for filtering */
+  .node.hidden, .link.hidden { display: none !important; }
+
+  /* Mobile responsive adjustments */
+  @media (max-width: 768px) {
+    #sidebar-left { width: calc(100% - 40px); bottom: 20px; top: auto; max-height: 40vh; }
+    #sidebar-right { width: calc(100% - 40px); top: 20px; height: auto; max-height: 50vh; }
+    #details-content h2 { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app-container">
+  
+  <!-- Canvas Zone -->
+  <main id="chart">
+    <div class="tooltip" id="tooltip"></div>
+    <svg id="svg"></svg>
+  </main>
+
+  <!-- Left Sidebar (Controls) -->
+  <aside id="sidebar-left" class="panel">
+    <header>
+      <h1>Campus IA Fouju</h1>
+      <p>Cartographie stratégique des acteurs et coalitions</p>
+    </header>
+    
+    <div class="controls">
+      <input id="search" type="text" placeholder="Rechercher un acteur, collectif...">
+      <div class="btn-group">
+        <button id="center">Recentrer</button>
+        <button id="reset">Réinitialiser</button>
+      </div>
+    </div>
+    
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+      <div class="section-title">Filtres catégoriels</div>
+      <div id="checks" class="filters">
+        <!-- Checkboxes injectées via JS -->
+      </div>
+    </div>
+    
+    <div class="count-indicator" id="count"></div>
+  </aside>
+  
+  <!-- Right Sidebar (Details) -->
+  <aside id="sidebar-right" class="panel">
+    <button class="close-btn" id="close-details">×</button>
+    <div id="details-content">
+      <!-- Contenu injecté via JS -->
+    </div>
+  </aside>
+
+</div>
+
+<script>
+const graphData = {
+  "nodes": [
+    {"id": "Campus IA Fouju", "label": "Campus IA\nFouju", "group": "Projet central", "size": 38, "detail": "Projet de méga-campus de centres de données et calcul IA à Fouju. Emprise de 90 hectares (130 terrains de football) sur terres agricoles. Consommation projetée à 1,4 GW (10,5 TWh), soit 2 % de la puissance électrique française ou 17 % de celle de l'Île-de-France."}, 
+    {"id": "Jean-François Dupont", "label": "Jean-François\nDupont", "group": "Opposants nommés", "size": 17, "detail": "FNE 77. Opposant central : dénonce le caractère « hors norme » du projet, l'artificialisation accélérée, les risques de pollution PFAS et la procédure accélérée. Demande une prolongation de l'enquête publique."},
+    {"id": "Jane Buisson", "label": "Jane\nBuisson", "group": "Opposants nommés", "size": 15, "detail": "Vice-présidente de FNE 77. A déposé une contribution officielle à l'enquête publique exigeant une nouvelle réunion publique et une rallonge des délais d'examen."},
+    {"id": "Pauline Isambert", "label": "Pauline\nIsambert", "group": "Opposants nommés", "size": 17, "detail": "Confédération paysanne 77. Critique la perte de terres agricoles arables et conteste la souveraineté alimentaire ; souligne que 9 exploitations locales ont vendu leurs terres."},
+    {"id": "Aline Aurias", "label": "Aline\nAurias", "group": "Opposants nommés", "size": 15, "detail": "Porte-parole de la Confédération paysanne. Opposée à la démesure et au flou entourant les consommations d'eau et le foncier. Critique une souveraineté financée par des capitaux étrangers."},
+    {"id": "William Elie", "label": "William\nElie", "group": "Opposants nommés", "size": 16, "detail": "Alliance écologique et sociale. Exige un moratoire immédiat et cherche à politiser le dossier pour en faire un enjeu de débat national."},
+    {"id": "Dorothée Villemaux", "label": "Dorothée\nVillemaux", "group": "Opposants nommés", "size": 15, "detail": "Les Écologistes de Melun Val de Seine. Alerte la population locale sur les impacts du projet qu'elle juge hautement problématique."},
+    {"id": "Maxime Colin", "label": "Maxime\nColin", "group": "Opposants nommés", "size": 15, "detail": "FNE Île-de-France. Conteste l'argument de souveraineté numérique nationale et met en cause le financement par le fonds souverain des Émirats arabes unis."},
+    {"id": "Lou Welgrym", "label": "Lou\nWelgrym", "group": "Opposants nommés", "size": 14, "detail": "Secrétaire générale de Data for Good. Critique la dérégulation administrative et la réduction systématique des capacités de recours juridiques des citoyens."},
+    {"id": "Anne-Laure Ligozat", "label": "Anne-Laure\nLigozat", "group": "Opposants nommés", "size": 14, "detail": "Professeure au LISN. Déplore le manque de concertation publique et l'absence totale de grand débat national concernant la légitimité des usages du calcul."},
+    {"id": "Marie Garin", "label": "Marie\nGarin", "group": "Opposants nommés", "size": 14, "detail": "Chercheuse postdoctorante au CNRS. Juge le dimensionnement de l'infrastructure déconnecté des besoins réels, reposant sur un pari spéculatif de marché."},
+    {"id": "Marlène De Bank", "label": "Marlène\nDe Bank", "group": "Opposants nommés", "size": 14, "detail": "The Shift Project. Alerte sur la concurrence électrique et les risques majeurs d'arbitrages au détriment de pans entiers de la transition énergétique."},
+    {"id": "Ophélie Coelho", "label": "Ophélie\nCoelho", "group": "Opposants nommés", "size": 14, "detail": "Chercheuse à l'IRIS. Spécialiste de la géopolitique du numérique, elle estime que les processus de concertation arrivent trop tardivement alors que 'la machine est déjà en route'."},
+    {"id": "Irénée Régnauld", "label": "Irénée\nRégnauld", "group": "Opposants nommés", "size": 14, "detail": "Doctorant en sociologie. Critique le gigantisme matériel et la dépendance technologique qu'il induit, plaidant pour une planification publique."},
+    {"id": "Olivier Petitjean", "label": "Olivier\nPetitjean", "group": "Opposants nommés", "size": 15, "detail": "Analyste à l'Observatoire des multinationales. Dénonce la soumission des politiques publiques aux intérêts financiers étrangers et de la Silicon Valley."},
+    {"id": "Nadia Salhi", "label": "Nadia\nSalhi", "group": "Opposants nommés", "size": 15, "detail": "Déléguée syndicale CGT chez STMicroelectronics. Conteste le mirage des promesses d'emplois en s'appuyant sur les précédents industriels du directeur de projet."},
+    {"id": "Laurence Allard", "label": "Laurence\nAllard", "group": "Opposants nommés", "size": 14, "detail": "Sociologue des usages du numérique. Observe et souligne la convergence citoyenne et l'appropriation transdisciplinaire exemplaire de la lutte de Fouju."},
+    {"id": "Pauline Denis", "label": "Pauline\nDenis", "group": "Opposants nommés", "size": 15, "detail": "Ingénieure au Shift Project. S'indigne du découpage juridique du projet opéré selon elle pour contourner les réglementations et éviter un classement Seveso."},
+    {"id": "Habitants Fernique", "label": "M. & Mme\nFernique", "group": "Habitants cités", "size": 15, "detail": "Habitants de Fouju. Dénoncent une infrastructure industrielle colossale imposée sans consultation préalable et s'interrogent : 'Est-ce qu’on a vraiment besoin de ce centre ?'"},
+    {"id": "Christine Scialom", "label": "Christine\nScialom", "group": "Habitants cités", "size": 14, "detail": "Propriétaire foncière locale. Exprime un sentiment de déclassement territorial profond : 'On a l’impression d’être les poubelles de Paris'."},
+    {"id": "Maud", "label": "Maud*\n(Maraîchère)", "group": "Habitants cités", "size": 14, "detail": "Maraîchère biologique installée près du site. Vivement inquiète des risques de pollution atmosphérique et de contamination des sols par les PFAS."},
+    {"id": "Marie-Paule Direur", "label": "Marie-Paule\nDireur", "group": "Habitants cités", "size": 14, "detail": "Habitante mobilisée au Bourget (lutte SEGRO), incarnant la jonction de terrain entre les différentes contestations de centres de données en Île-de-France."},
+    {"id": "Arnaud Saint-Martin", "label": "Arnaud\nSaint-Martin", "group": "Élus critiques", "size": 24, "detail": "Député LFI de Seine-et-Marne. Principal opposant politique au projet. Dénonce un projet inutile, énergivore et opaque porté par un 'courtier' ('Fouju devient une cause nationale')."},
+    {"id": "Marianne Margaté", "label": "Marianne\nMargaté", "group": "Élus critiques", "size": 19, "detail": "Sénatrice communiste de Seine-et-Marne. S'oppose frontalement ; a déposé une question écrite fustigeant un contournement réglementaire par découpage artificiel du projet."},
+    {"id": "Céline Malaisé", "label": "Céline\nMalaisé", "group": "Élus critiques", "size": 19, "detail": "Présidente du groupe de gauche à la Région IdF. Dénonce l'opacité totale du dossier à l'échelle régionale, le projet ayant été dissimulé derrière les plans d'une prison."},
+    {"id": "Stéphanie Le Meur", "label": "Stéphanie\nLe Meur", "group": "Élus critiques", "size": 15, "detail": "Maire-adjointe socialiste de Moissy-Cramayel. Critique la contrainte financière qui étrangle les communes et les pousse indirectement à accepter le projet au niveau de l'agglomération."},
+    {"id": "Jean-Luc Mélenchon", "label": "Jean-Luc\nMélenchon", "group": "Élus critiques", "size": 15, "detail": "Figure nationale LFI. Critique politique globale du modèle macro-économique, accusant l'exécutif de transformer la France en 'colonie numérique'."},
+    {"id": "Députés socialistes", "label": "Députés\nsocialistes", "group": "Élus critiques", "size": 14, "detail": "Groupe socialiste à l'Assemblée nationale. Position d'encadrement critique législatif via le dépôt d'amendements contre la simplification administrative sans contreparties."},
+    {"id": "Jonathan Wochenmayer", "label": "Jonathan\nWochenmayer", "group": "Élus favorables / nuancés", "size": 22, "detail": "Maire de Fouju. Très favorable au projet, il met en avant les retombées économiques et les recettes fiscales de sa commune. A interdit les rassemblements par arrêté municipal."},
+    {"id": "Jean-Louis Thiériot", "label": "Jean-Louis\nThiériot", "group": "Élus favorables / nuancés", "size": 17, "detail": "Député LR de Seine-et-Marne. Soutient fermement l'infrastructure au nom de l'impératif de souveraineté technologique face aux blocs américain et chinois."},
+    {"id": "Christian Poteau/Pointeau", "label": "Christian\nPoteau", "group": "Élus favorables / nuancés", "size": 16, "detail": "Président de la CC Brie des Rivières et Châteaux. Plutôt favorable ou rassuré, tout en se disant attentif aux impacts réels sur l'eau, la mobilité et l'économie locale."},
+    {"id": "Hervé Jeannin", "label": "Hervé\nJeannin", "group": "Élus favorables / nuancés", "size": 16, "detail": "Maire de Crisenoy. Posture prudente et nuancée ; s'inquiète des hauteurs de bâtiments, de l'insertion paysagère, des risques d'inondations et du voisinage de la prison."},
+    {"id": "Aymeric Durox", "label": "Aymeric\nDurox", "group": "Élus favorables / nuancés", "size": 15, "detail": "Sénateur RN de Seine-et-Marne. Favorable par pragmatisme compétitif territorial : considère qu'il vaut mieux implanter ces infrastructures en France qu'à l'étranger."},
+    {"id": "Denis Larghero", "label": "Denis\nLarghero", "group": "Élus favorables / nuancés", "size": 14, "detail": "Maire UDI de Meudon, cité de manière générale pour sa défense des centres de données comme des leviers indispensables d'attractivité économique."},
+    {"id": "Emmanuel Macron", "label": "Emmanuel\nMacron", "group": "Élus favorables / nuancés", "size": 18, "detail": "Président de la République. Totalement favorable au projet, promeut activement l'expansion à Choose France sous le slogan 'MGX choisit la France', ciblant 3 GW sur le territoire."},
+    {"id": "Valérie Pécresse", "label": "Valérie\nPécresse", "group": "Élus favorables / nuancés", "size": 15, "detail": "Président de la Région Île-de-France. Posture ambiguë / non prononcée publiquement ; citée uniquement comme pouvoir décisionnaire final pour un éventuel cofinancement."},
+    {"id": "Stop Campus IA", "label": "Stop\nCampus IA", "group": "Organisations locales", "size": 24, "detail": "Collectif d'opposition locale, structurant la contestation citoyenne et les rassemblements militants sur le terrain à Fouju et Champeaux."},
+    {"id": "FNE 77", "label": "FNE 77", "group": "Organisations locales", "size": 26, "detail": "Association environnementale départementale, pivot technique de la contestation (conférence de presse du 13 mai, dépôt de contributions)."},
+    {"id": "FNE IDF", "label": "FNE\nÎle-de-France", "group": "Organisations locales", "size": 19, "detail": "Fédération régionale environnementale impliquée dans l'analyse juridique et la critique des implantations de centres de données en Île-de-France."},
+    {"id": "Les Soulèvements de la Terre", "label": "Soulèvements\nde la Terre", "group": "Organisations locales", "size": 21, "detail": "Mouvement écologiste national, relais militant actif sur le terrain ayant mobilisé plus de 200 personnes lors des rassemblements du 24 mai."},
+    {"id": "Confédération paysanne 77", "label": "Confédération\npaysanne 77", "group": "Organisations locales", "size": 22, "detail": "Syndicat agricole départemental fermement opposé au projet au nom de la défense des terres arables et de la souveraineté alimentaire face au bétonnage."},
+    {"id": "Confédération paysanne IDF", "label": "Confédération\npaysanne IDF", "group": "Organisations locales", "size": 17, "detail": "Structure syndicale régionale mobilisée contre l'accaparement et la pression foncière exercée sur les ceintures maraîchères franciliennes."},
+    {"id": "LPO 77", "label": "LPO 77", "group": "Organisations locales", "size": 18, "detail": "Association de protection de la biodiversité, membre de la coalition Stop Campus IA, proposant des inventaires naturalistes contradictoires du site."},
+    {"id": "Écologistes Melun Val de Seine", "label": "Écologistes\nMelun Val", "group": "Organisations locales", "size": 17, "detail": "Structure politique écologiste locale représentée par Dorothée Villemaux."},
+    {"id": "Solidaires", "label": "Solidaires", "group": "Organisations locales", "size": 18, "detail": "Union syndicale mobilisée au sein du collectif de contestation citoyenne et environnementale."},
+    {"id": "Solidaires Informatique", "label": "Solidaires\nInformatique", "group": "Organisations locales", "size": 16, "detail": "Syndicat sectoriel présent lors des points presse pour apporter une expertise technique et sectorielle critique."},
+    {"id": "Solidaires Essonne", "label": "Solidaires\nEssonne", "group": "Organisations locales", "size": 16, "detail": "Structure syndicale locale mobilisée (via l'intervention de William) en faveur d'un moratoire d'arrêt des constructions."},
+    {"id": "Alliance écologique et sociale", "label": "Alliance\néco-sociale", "group": "Organisations locales", "size": 18, "detail": "Coalition syndicats-associations exigeant l'arrêt immédiat des simplifications administratives sans garanties."},
+    {"id": "Attac", "label": "Attac", "group": "Organisations locales", "size": 15, "detail": "Association altermondialiste présente lors de la mobilisation transdisciplinaire citoyenne du 24 mai."},
+    {"id": "Les Amis de la Terre", "label": "Amis de\nla Terre", "group": "Organisations locales", "size": 15, "detail": "Association environnementale nationale intégrée à la coalition de contestation publique contre Campus IA."},
+    {"id": "Extinction Rebellion", "label": "Extinction\nRebellion", "group": "Organisations locales", "size": 15, "detail": "Collectif écologiste, engagé dans les actions directes et mobilisations de terrain à Champeaux."},
+    {"id": "Thibaud Desfossés", "label": "Thibaud\nDesfossés", "group": "Porteurs / partenaires économiques", "size": 22, "detail": "Président de Campus IA / Directeur chez MGX. Invoque l'indépendance de calcul des entreprises mais se mure derrière le secret des affaires sur la gouvernance."},
+    {"id": "MGX", "label": "MGX\n(Abou Dabi)", "group": "Porteurs / partenaires économiques", "size": 24, "detail": "Fonds d'investissement souverain des Émirats arabes unis, actionnaire majoritaire à 70 % du projet. Lié à l'appareil sécuritaire émirati."},
+    {"id": "Bpifrance (BPI)", "label": "Bpifrance\n(BPI)", "group": "Porteurs / partenaires économiques", "size": 20, "detail": "Banque publique d'investissement française, actionnaire à 25 % assurant une présence de l'État dans la gouvernance (concède une souveraineté variable)."},
+    {"id": "Eiffage / Eiffage Énergie Systèmes", "label": "Eiffage", "group": "Porteurs / partenaires économiques", "size": 19, "detail": "Groupe industriel attributaire officiel d'un marché industriel majeur de plus de 120 M€ pour la conception-réalisation de la sous-station haute tension."},
+    {"id": "RTE", "label": "RTE", "group": "Porteurs / partenaires économiques", "size": 20, "detail": "Gestionnaire du réseau de transport d'électricité, signataire du contrat de raccordement électrique en amont de l'enquête publique."},
+    {"id": "Nvidia", "label": "Nvidia", "group": "Porteurs / partenaires économiques", "size": 16, "detail": "Multinationale technologique actionnaire à 4 %, équipant le complexe de Fouju avec ses processeurs et composants de calcul."},
+    {"id": "Mistral AI", "label": "Mistral AI", "group": "Porteurs / partenaires économiques", "size": 18, "detail": "Start-up française d'intelligence artificielle, membre du consortium d'investissement."},
+    {"id": "Printemps des luttes locales", "label": "Printemps des\nluttes locales", "group": "Réseau élargi", "size": 16, "detail": "Cadre militant et réseau de coordination ayant encadré le pique-nique protestataire contre Campus IA."},
+    {"id": "Le Nuage était sous nos pieds", "label": "Le Nuage\nétait sous nos pieds", "group": "Réseau élargi", "size": 18, "detail": "Collectif marseillais techno-critique des centres de données, cité comme référence nationale de lutte d'appropriation technique."},
+    {"id": "Collectif du Bourget", "label": "Collectif\ndu Bourget", "group": "Réseau élargi", "size": 15, "detail": "Collectif local opposé à un projet de centre de données Segro, établissant des passerelles de solidarité avec Fouju."},
+    {"id": "Collectif de Vitry-sur-Seine", "label": "Collectif de\nVitry", "group": "Réseau élargi", "size": 15, "detail": "Collectif citoyen engagé dans la contestation francilienne globale contre la prolifération des infrastructures numériques."},
+    {"id": "Collectif de Wissous", "label": "Collectif de\nWissous", "group": "Réseau élargi", "size": 15, "detail": "Collectif francilien engagé dans la contestation contre un projet distinct de l'opérateur CyrusOne."},
+    {"id": "La Quadrature du Net", "label": "La Quadrature\ndu Net", "group": "Réseau élargi", "size": 18, "detail": "Association de défense des libertés numériques, réclamant un moratoire d'urbanisme sur les grands entrepôts de serveurs."},
+    {"id": "Hiatus", "label": "Hiatus", "group": "Réseau élargi", "size": 15, "detail": "Collectif d'analyse techno-critique allié de La Quadrature du Net."},
+    {"id": "STopMicro", "label": "STopMicro", "group": "Réseau élargi", "size": 14, "detail": "Collectif techno-critique grenoblois, cité comme référence de mobilisation contre les industries numériques de forte puissance."},
+    {"id": "MRAe", "label": "MRAe (Autorité\nEnvironnementale)", "group": "Réseau élargi", "size": 18, "detail": "Mission Régionale d'Autorité Environnementale. Émet un avis d'alerte critique sur l'usage de gaz SF6 et les risques de fuites de PFAS."},
+    {"id": "L’Européenne", "label": "L’Européenne", "group": "Réseau élargi", "size": 16, "detail": "Ancien porteur du projet logistique abandonné sur le site, bénéficiaire d'un protocole d'accord transactionnel avec la CC2SO."},
+    {"id": "Commissaire-enquêteur", "label": "Commissaire-\nenquêteur", "group": "Réseau élargi", "size": 14, "detail": "Autorité indépendante ayant rendu un avis défavorable motivé sur l'ancien projet logistique au vu des nuisances de proximité."},
+    {"id": "École Polytechnique", "label": "École\nPolytechnique", "group": "Réseau élargi", "size": 15, "detail": "Partenariat académique prévu sur 60 à 65 ha du site."},
+    {"id": "Le Chiffon", "label": "Le Chiffon", "group": "Médias et sources", "size": 15, "detail": "Journal militant francilien ayant organisé des soirées-débats 'Contre les data centers et leur monde'."},
+    {"id": "Actualité des luttes", "label": "Actualité\ndes luttes", "group": "Médias et sources", "size": 15, "detail": "Média militant indépendant assurant la couverture et le relais des mobilisations écologiques d'Île-de-France."},
+    {"id": "mesinfos.fr", "label": "mesinfos.fr", "group": "Médias et sources", "size": 15, "detail": "Média d'information économique et légal ayant rendu publique l'attribution du marché de raccordement d'Eiffage."},
+    {"id": "L’Humanité", "label": "L’Humanité", "group": "Médias et sources", "size": 16, "detail": "Quotidien national d'enquêtes (Pierric Marissal). Source ayant révélé le contrôle émirati (70% MGX) et les risques environnementaux."},
+    {"id": "Observatoire des multinationales", "label": "Observatoire\nMultnationales", "group": "Médias et sources", "size": 16, "detail": "Plateforme d'investigation économique ayant démonté de manière critique les structures de capitaux cachées derrière Choose France."}, 
+    {"id": "Pierre Ory", "label": "Pierre Ory\n(Préfet)", "group": "Élus favorables / nuancés", "size": 20, "detail": "Préfet de Seine-et-Marne, a délivré l'autorisation préfectorale le 29 juillet 2026."},
+    {"id": "Ersilia Soudais", "label": "Ersilia\nSoudais", "group": "Élus critiques", "size": 16, "detail": "Députée LFI-NFP. Dénonce une aberration écologique pénalisant le sud du département."},
+    {"id": "Cyrielle Chatelain", "label": "Cyrielle\nChatelain", "group": "Élus critiques", "size": 16, "detail": "Députée écologiste plaidant pour un moratoire et un contrôle public des investissements dans les datacenters."},
+    {"id": "Valérie Masson-Delmotte", "label": "V.\nMasson-Delmotte", "group": "Opposants nommés", "size": 17, "detail": "Paléoclimatologue. Alerte sur la formation d'îlots de chaleur et l'explosion des rejets de NOx liés à la maintenance des groupes électrogènes."},
+    {"id": "Jean Guiony", "label": "Jean\nGuiony", "group": "Opposants nommés", "size": 15, "detail": "Urbaniste dénonçant un virage féodal et l'accaparement des terres par la tech."},
+    {"id": "Eveline Biaggini", "label": "Eveline\nBiaggini", "group": "Habitants cités", "size": 13, "detail": "Habitante de 53 ans opposée au projet pour des raisons écologiques."},
+    {"id": "Giuliano Del Negro", "label": "Giuliano\nDel Negro", "group": "Habitants cités", "size": 13, "detail": "Habitant inquiet de l'urbanisation périphérique et des nuisances de chantier."},
+    {"id": "Laurent", "label": "Laurent", "group": "Habitants cités", "size": 13, "detail": "Habitant favorable, espérant des retombées économiques et des emplois."},
+    {"id": "Jean-Noël Péché", "label": "Jean-Noël\nPéché", "group": "Habitants cités", "size": 14, "detail": "Apiculteur dénonçant l'artificialisation inutile de 70 hectares de terres agricoles."}
+  ],
+  "links": [
+    {"source": "Campus IA Fouju", "target": "Jean-François Dupont", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Jane Buisson", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Pauline Isambert", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Aline Aurias", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "William Elie", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Dorothée Villemaux", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Maxime Colin", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Lou Welgrym", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Anne-Laure Ligozat", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Marie Garin", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Marlène De Bank", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Ophélie Coelho", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Irénée Régnauld", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Habitants Fernique", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Christine Scialom", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Maud", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Arnaud Saint-Martin", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Jean-Luc Mélenchon", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Députés socialistes", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Jonathan Wochenmayer", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Jean-Louis Thiériot", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Christian Poteau/Pointeau", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Hervé Jeannin", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Aymeric Durox", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Denis Larghero", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Stop Campus IA", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "FNE 77", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "FNE IDF", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Les Soulèvements de la Terre", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Confédération paysanne 77", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Confédération paysanne IDF", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "LPO 77", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Écologistes Melun Val de Seine", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Solidaires", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Solidaires Informatique", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Solidaires Essonne", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "Alliance écologique et sociale", "kind": "position sur le projet"},
+    {"source": "Campus IA Fouju", "target": "MGX", "kind": "lien structurel"},
+    {"source": "Campus IA Fouju", "target": "Bpifrance (BPI)", "kind": "lien structurel"},
+    {"source": "Campus IA Fouju", "target": "Eiffage / Eiffage Énergie Systèmes", "kind": "lien structurel"},
+    {"source": "Campus IA Fouju", "target": "RTE", "kind": "lien structurel"},
+    {"source": "Campus IA Fouju", "target": "Nvidia", "kind": "lien structurel"},
+    {"source": "Campus IA Fouju", "target": "Emmanuel Macron", "kind": "appui étatique"},
+    {"source": "Campus IA Fouju", "target": "Valérie Pécresse", "kind": "pouvoir régional"},
+    {"source": "Campus IA Fouju", "target": "Marianne Margaté", "kind": "contestation parlementaire"},
+    {"source": "Campus IA Fouju", "target": "Céline Malaisé", "kind": "contestation régionale"},
+    {"source": "Campus IA Fouju", "target": "MRAe", "kind": "évaluation environnementale"},
+    {"source": "Campus IA Fouju", "target": "L’Européenne", "kind": "litige foncier"},
+    {"source": "Campus IA Fouju", "target": "Olivier Petitjean", "kind": "analyse critique"},
+    {"source": "Campus IA Fouju", "target": "Nadia Salhi", "kind": "alerte emploi"},
+    {"source": "Campus IA Fouju", "target": "Laurence Allard", "kind": "analyse sociologique"},
+    {"source": "Campus IA Fouju", "target": "Pauline Denis", "kind": "alerte technique"},
+    {"source": "Campus IA Fouju", "target": "Attac", "kind": "coalition élargie"},
+    {"source": "Campus IA Fouju", "target": "Les Amis de la Terre", "kind": "coalition élargie"},
+    {"source": "Campus IA Fouju", "target": "Extinction Rebellion", "kind": "coalition élargie"},
+    {"source": "Jean-François Dupont", "target": "FNE 77", "kind": "rattachement"},
+    {"source": "Jane Buisson", "target": "FNE 77", "kind": "rattachement"},
+    {"source": "Pauline Isambert", "target": "Confédération paysanne 77", "kind": "rattachement"},
+    {"source": "Aline Aurias", "target": "Confédération paysanne IDF", "kind": "rattachement"},
+    {"source": "William Elie", "target": "Alliance écologique et sociale", "kind": "rattachement"},
+    {"source": "Dorothée Villemaux", "target": "Écologistes Melun Val de Seine", "kind": "rattachement"},
+    {"source": "Maxime Colin", "target": "FNE IDF", "kind": "rattachement"},
+    {"source": "Lou Welgrym", "target": "La Quadrature du Net", "kind": "réseau expert"},
+    {"source": "Marlène De Bank", "target": "The Shift Project", "kind": "rattachement"},
+    {"source": "Pauline Denis", "target": "The Shift Project", "kind": "rattachement"},
+    {"source": "Olivier Petitjean", "target": "Observatoire des multinationales", "kind": "rattachement"},
+    {"source": "Nadia Salhi", "target": "L’Humanité", "kind": "source tribune"},
+    {"source": "Stop Campus IA", "target": "FNE 77", "kind": "coordination locale"},
+    {"source": "Stop Campus IA", "target": "Confédération paysanne 77", "kind": "coordination locale"},
+    {"source": "Stop Campus IA", "target": "Les Soulèvements de la Terre", "kind": "coordination locale"},
+    {"source": "Stop Campus IA", "target": "LPO 77", "kind": "coordination locale"},
+    {"source": "Attac", "target": "Les Amis de la Terre", "kind": "front commun"},
+    {"source": "Extinction Rebellion", "target": "Les Soulèvements de la Terre", "kind": "front commun"},
+    {"source": "Thibaud Desfossés", "target": "MGX", "kind": "direction"},
+    {"source": "MGX", "target": "Emmanuel Macron", "kind": "Choose France"},
+    {"source": "Eiffage / Eiffage Énergie Systèmes", "target": "RTE", "kind": "raccordement contractuel"},
+    {"source": "Marianne Margaté", "target": "Céline Malaisé", "kind": "bloc gauche"},
+    {"source": "Stéphanie Le Meur", "target": "Céline Malaisé", "kind": "bloc gauche"},
+    {"source": "L’Européenne", "target": "Commissaire-enquêteur", "kind": "passé administratif"},
+    {"source": "Habitants Fernique", "target": "Stop Campus IA", "kind": "riverains"},
+    {"source": "Christine Scialom", "target": "Stop Campus IA", "kind": "riverains"},
+    {"source": "Maud", "target": "Confédération paysanne 77", "kind": "maraîchage impacté"},
+    {"source": "Campus IA Fouju", "target": "L’Humanité", "kind": "source"},
+    {"source": "Eiffage / Eiffage Énergie Systèmes", "target": "mesinfos.fr", "kind": "source"},
+    {"source": "MGX", "target": "Observatoire des multinationales", "kind": "source"},
+    {"source": "Stop Campus IA", "target": "Le Monde / Le Chiffon / Actualité des luttes", "kind": "source"}, 
+    {"source": "Campus IA Fouju", "target": "Mistral AI", "kind": "consortium"},
+    {"source": "Campus IA Fouju", "target": "École Polytechnique", "kind": "partenariat académique"},
+    {"source": "Campus IA Fouju", "target": "Pierre Ory", "kind": "autorisation administrative"},
+    {"source": "Campus IA Fouju", "target": "Ersilia Soudais", "kind": "opposition parlementaire"},
+    {"source": "Campus IA Fouju", "target": "Cyrielle Chatelain", "kind": "opposition parlementaire"},
+    {"source": "Campus IA Fouju", "target": "Valérie Masson-Delmotte", "kind": "alerte climatique"},
+    {"source": "Campus IA Fouju", "target": "Jean Guiony", "kind": "analyse foncière"},
+    {"source": "Campus IA Fouju", "target": "Eveline Biaggini", "kind": "riverain"},
+    {"source": "Campus IA Fouju", "target": "Giuliano Del Negro", "kind": "riverain"},
+    {"source": "Campus IA Fouju", "target": "Laurent", "kind": "riverain"},
+    {"source": "Campus IA Fouju", "target": "Jean-Noël Péché", "kind": "riverain"}
+  ]
+};
+
+// Palette de couleurs moderne
+const colors = {
+  "Projet central": "#0f172a",
+  "Opposants nommés": "#ef4444",
+  "Habitants cités": "#f97316",
+  "Élus critiques": "#8b5cf6",
+  "Élus favorables / nuancés": "#2563eb",
+  "Organisations locales": "#10b981",
+  "Porteurs / partenaires économiques": "#312e81",
+  "Réseau élargi": "#06b6d4",
+  "Médias et sources": "#64748b"
+};
+
+const groups = ["Habitants cités", "Médias et sources", "Opposants nommés", "Organisations locales", "Porteurs / partenaires économiques", "Projet central", "Réseau élargi", "Élus critiques", "Élus favorables / nuancés"];
+const central = "Campus IA Fouju";
+
+const svg = document.getElementById('svg'), chart = document.getElementById('chart'), checks = document.getElementById('checks'), countEl = document.getElementById('count');
+const rightSidebar = document.getElementById('sidebar-right');
+const detailsContent = document.getElementById('details-content');
+const tooltip = document.getElementById('tooltip');
+
+let width = chart.clientWidth, height = chart.clientHeight;
+svg.setAttribute('viewBox', [0,0,width,height].join(' '));
+
+const ns = "http://www.w3.org/2000/svg";
+const g = document.createElementNS(ns,'g'); svg.appendChild(g);
+const linkG = document.createElementNS(ns,'g'), nodeG = document.createElementNS(ns,'g'); 
+g.appendChild(linkG); g.appendChild(nodeG);
+
+// Setup UI Filters
+const activeGroups = new Set(groups);
+groups.forEach(gr => {
+  const label = document.createElement('label');
+  label.className = 'filter-label';
+  label.style.color = colors[gr];
+  label.innerHTML = `
+    <input type="checkbox" checked value="${gr}">
+    <span class="checkbox-custom" style="color: ${colors[gr]}; border-color: ${colors[gr]}"></span>
+    <span>${gr}</span>
+  `;
+  checks.appendChild(label);
+});
+
+checks.addEventListener('change', e => {
+  if(e.target.type === 'checkbox') {
+    e.target.checked ? activeGroups.add(e.target.value) : activeGroups.delete(e.target.value);
+    applyFilters();
+  }
+});
+
+// Setup Data
+const nodes = graphData.nodes.map(d => Object.assign({}, d));
+const nodeById = new Map(nodes.map(d => [d.id,d]));
+const links = graphData.links.map(d => Object.assign({}, d, {source: nodeById.get(d.source), target: nodeById.get(d.target)})).filter(d => d.source && d.target);
+
+// Render Links
+const linkEls = links.map(l => {
+  const path = document.createElementNS(ns,'path');
+  path.classList.add('link');
+  path.dataset.source = l.source.id;
+  path.dataset.target = l.target.id;
+  linkG.appendChild(path);
+  return path;
+});
+
+// Render Nodes
+const nodeEls = nodes.map(n => {
+  const el = document.createElementNS(ns,'g');
+  el.classList.add('node');
+  el.dataset.id = n.id; el.dataset.group = n.group;
+  
+  // Invisible hit area for better hovering
+  const hit = document.createElementNS(ns,'circle');
+  hit.setAttribute('r', n.size + 15);
+  hit.setAttribute('fill', 'transparent');
+  
+  const c = document.createElementNS(ns,'circle');
+  c.setAttribute('r', n.size);
+  c.setAttribute('fill', colors[n.group] || '#999');
+  
+  const t = document.createElementNS(ns,'text');
+  t.setAttribute('dy', n.size + 16);
+  n.label.split('\n').forEach((part,i) => {
+    const tsp = document.createElementNS(ns,'tspan');
+    tsp.textContent = part;
+    tsp.setAttribute('x', 0);
+    tsp.setAttribute('dy', i===0 ? 0 : 13);
+    t.appendChild(tsp);
+  });
+  
+  el.appendChild(hit);
+  el.appendChild(c);
+  el.appendChild(t);
+  nodeG.appendChild(el);
+  
+  el.addEventListener('click', () => openDetails(n));
+  el.addEventListener('mouseenter', ev => handleHover(n, ev));
+  el.addEventListener('mousemove', ev => moveTooltip(ev));
+  el.addEventListener('mouseleave', () => clearHover());
+  
+  drag(el,n);
+  return el;
+});
+
+// Initialization
+function initialPosition() {
+  const ring = { "Projet central": 0, "Organisations locales": 160, "Porteurs / partenaires économiques": 200, "Opposants nommés": 280, "Habitants cités": 280, "Élus critiques": 380, "Élus favorables / nuancés": 380, "Réseau élargi": 460, "Médias et sources": 460 };
+  const byGroup = {}; nodes.forEach(n => (byGroup[n.group] ||= []).push(n));
+  nodes.forEach(n => {
+    if(n.id === central) { n.x = width/2; n.y = height/2; return; }
+    const arr = byGroup[n.group], idx = arr.indexOf(n), total = arr.length;
+    let base = Object.keys(byGroup).indexOf(n.group) * 0.55;
+    if(n.group === "Élus favorables / nuancés") base = -0.15;
+    if(n.group === "Élus critiques") base = 2.45;
+    const angle = base + idx * (Math.PI*2/Math.max(total,1));
+    const r = ring[n.group] || 320;
+    n.x = width/2 + Math.cos(angle)*r; n.y = height/2 + Math.sin(angle)*r;
+  });
+}
+initialPosition();
+
+// Simple organic physics
+function tick() {
+  for(let k=0;k<2;k++) {
+    // Link attraction
+    links.forEach(l => {
+      const dx = l.target.x-l.source.x, dy = l.target.y-l.source.y, dist = Math.hypot(dx,dy) || 1;
+      const desired = l.source.id===central || l.target.id===central ? 180 : 130;
+      const f = (dist-desired)*0.008, fx = dx/dist*f, fy = dy/dist*f;
+      if(!l.source.fixed) { l.source.x += fx; l.source.y += fy; }
+      if(!l.target.fixed) { l.target.x -= fx; l.target.y -= fy; }
+    });
+    // Node repulsion
+    for(let i=0;i<nodes.length;i++) {
+      for(let j=i+1;j<nodes.length;j++) {
+        const a=nodes[i], b=nodes[j], dx=b.x-a.x, dy=b.y-a.y, dist=Math.hypot(dx,dy)||1, min=a.size+b.size+45;
+        if(dist < min) { const f=(min-dist)/dist*0.025; if(!a.fixed) {a.x-=dx*f; a.y-=dy*f;} if(!b.fixed) {b.x+=dx*f; b.y+=dy*f;} }
+      }
+    }
+    // Centering force
+    nodes.forEach(n => {
+      if(n.id !== central && !n.fixed) { n.x += (width/2 - n.x)*0.001; n.y += (height/2 - n.y)*0.001; }
+      n.x = Math.max(50, Math.min(width-50, n.x)); n.y = Math.max(50, Math.min(height-50, n.y));
+    });
+  }
+  
+  // Update positions (curved links)
+  linkEls.forEach((el,i) => { 
+    const l = links[i]; 
+    const dx = l.target.x - l.source.x;
+    const dy = l.target.y - l.source.y;
+    const dr = Math.hypot(dx, dy) * 1.5; // Bezier arc
+    el.setAttribute('d', `M${l.source.x},${l.source.y} A${dr},${dr} 0 0,1 ${l.target.x},${l.target.y}`); 
+  });
+  
+  nodeEls.forEach((el,i) => el.setAttribute('transform',`translate(${nodes[i].x},${nodes[i].y})`));
+  requestAnimationFrame(tick);
+}
+tick();
+
+let selectedNodeId = null;
+
+function getNeighbors(nodeId) {
+  const neigh = new Set([nodeId]);
+  links.forEach(l => { 
+    if(l.source.id===nodeId) neigh.add(l.target.id); 
+    if(l.target.id===nodeId) neigh.add(l.source.id); 
+  });
+  return neigh;
+}
+
+function handleHover(n, ev) {
+  svg.classList.add('is-interacting');
+  const neigh = getNeighbors(n.id);
+  
+  nodeEls.forEach(el => {
+    if(neigh.has(el.dataset.id)) el.classList.add('active');
+    else el.classList.remove('active');
+  });
+  
+  linkEls.forEach((el,i) => { 
+    const l=links[i]; 
+    if(l.source.id === n.id || l.target.id === n.id) el.classList.add('active'); 
+    else el.classList.remove('active');
+  });
+
+  // Tooltip
+  tooltip.textContent = n.id + " — " + n.group;
+  tooltip.classList.add('show');
+  moveTooltip(ev);
+}
+
+function clearHover() {
+  tooltip.classList.remove('show');
+  if(!selectedNodeId) {
+    svg.classList.remove('is-interacting');
+    nodeEls.forEach(el => el.classList.remove('active'));
+    linkEls.forEach(el => el.classList.remove('active'));
+  } else {
+    // Retain selected state hover equivalent
+    const n = nodeById.get(selectedNodeId);
+    if(n) simulateHoverState(n);
+  }
+}
+
+function simulateHoverState(n) {
+  const neigh = getNeighbors(n.id);
+  nodeEls.forEach(el => {
+    if(neigh.has(el.dataset.id)) el.classList.add('active');
+    else el.classList.remove('active');
+    if(el.dataset.id === n.id) el.classList.add('selected');
+    else el.classList.remove('selected');
+  });
+  linkEls.forEach((el,i) => { 
+    const l=links[i]; 
+    if(l.source.id === n.id || l.target.id === n.id) el.classList.add('active'); 
+    else el.classList.remove('active');
+  });
+}
+
+function moveTooltip(ev) {
+  const rect = chart.getBoundingClientRect();
+  tooltip.style.left = (ev.clientX - rect.left) + 'px';
+  tooltip.style.top = (ev.clientY - rect.top) + 'px';
+}
+
+function openDetails(n) {
+  selectedNodeId = n.id;
+  svg.classList.add('is-interacting');
+  simulateHoverState(n);
+  
+  const neighIds = [...getNeighbors(n.id)].filter(x=>x!==n.id);
+  const connectionsHtml = neighIds.length > 0 
+    ? neighIds.map(id => `<span class="conn-tag">${escapeHtml(id)}</span>`).join('')
+    : '<span class="conn-tag" style="background:transparent;border:none;">Aucune connexion visible</span>';
+
+  detailsContent.innerHTML = `
+    <h2>${escapeHtml(n.id)}</h2>
+    <span class="pill" style="background:${colors[n.group]}">${escapeHtml(n.group)}</span>
+    <p>${escapeHtml(n.detail)}</p>
+    <div class="connections-box">
+      <div class="conn-title">Réseau direct (${neighIds.length})</div>
+      <div class="conn-list">${connectionsHtml}</div>
+    </div>
+  `;
+  rightSidebar.classList.add('active');
+}
+
+document.getElementById('close-details').addEventListener('click', () => {
+  rightSidebar.classList.remove('active');
+  selectedNodeId = null;
+  svg.classList.remove('is-interacting');
+  nodeEls.forEach(el => el.classList.remove('active', 'selected'));
+  linkEls.forEach(el => el.classList.remove('active'));
+});
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+
+function applyFilters() {
+  const q = document.getElementById('search').value.trim().toLowerCase(); let visible = 0;
+  nodeEls.forEach((el,i) => { 
+    const n = nodes[i]; 
+    const ok = activeGroups.has(n.group) && (!q || (n.id + " " + n.group + " " + n.detail).toLowerCase().includes(q)); 
+    el.classList.toggle('hidden', !ok); 
+    if(ok) visible++; 
+  });
+  linkEls.forEach((el,i) => { 
+    const l = links[i]; 
+    const sEl = nodeEls[nodes.indexOf(l.source)], tEl = nodeEls[nodes.indexOf(l.target)]; 
+    el.classList.toggle('hidden', sEl.classList.contains('hidden') || tEl.classList.contains('hidden')); 
+  });
+  countEl.textContent = `${visible} nœuds structurels affichés sur ${nodes.length}`;
+}
+
+document.getElementById('search').addEventListener('input', applyFilters); applyFilters();
+
+document.getElementById('reset').onclick = () => {
+  document.getElementById('search').value = ""; 
+  document.querySelectorAll('#checks input').forEach(cb => { cb.checked=true; activeGroups.add(cb.value); }); 
+  applyFilters();
+  document.getElementById('close-details').click();
+  document.getElementById('center').click();
+};
+
+document.getElementById('center').onclick = () => { currentZoom = 1; panX = 0; panY = 0; updateTransform(); };
+
+function drag(el,n) {
+  let down=false, ox=0, oy=0;
+  el.addEventListener('pointerdown', ev => { 
+    down=true; n.fixed=true; el.setPointerCapture(ev.pointerId); 
+    const pt = toSvg(ev); ox = n.x-pt.x; oy=n.y-pt.y; 
+    ev.stopPropagation(); // Prevent panning when dragging nodes
+  });
+  el.addEventListener('pointermove', ev => { if(!down) return; const pt=toSvg(ev); n.x=pt.x+ox; n.y=pt.y+oy; });
+  el.addEventListener('pointerup', ev => { down=false; n.fixed = false; el.releasePointerCapture(ev.pointerId); });
+}
+
+let currentZoom=1, panX=0, panY=0, panning=false, sx=0, sy=0;
+function updateTransform() { g.setAttribute('transform', `translate(${panX},${panY}) scale(${currentZoom})`); }
+function toSvg(ev) { const rect = svg.getBoundingClientRect(); return {x:(ev.clientX-rect.left-panX)/currentZoom, y:(ev.clientY-rect.top-panY)/currentZoom}; }
+
+svg.addEventListener('wheel', ev => { 
+  ev.preventDefault(); 
+  const scale = ev.deltaY < 0 ? 1.08 : 0.92; 
+  currentZoom = Math.max(0.2, Math.min(3, currentZoom*scale)); 
+  updateTransform(); 
+}, {passive:false});
+
+chart.addEventListener('pointerdown', ev => { 
+  if(ev.target===svg || ev.target===g || ev.target.classList.contains('link')) { 
+    panning=true; sx=ev.clientX-panX; sy=ev.clientY-panY; 
+    chart.style.cursor='grabbing'; 
+  } 
+});
+window.addEventListener('pointermove', ev => { if(panning) { panX=ev.clientX-sx; panY=ev.clientY-sy; updateTransform(); } });
+window.addEventListener('pointerup', () => { panning=false; chart.style.cursor='grab'; });
+window.addEventListener('resize', () => { 
+  width = chart.clientWidth; height = chart.clientHeight; 
+  svg.setAttribute('viewBox', [0,0,width,height].join(' ')); 
+});
+</script>
+</body>
+</html>
